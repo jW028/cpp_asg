@@ -16,6 +16,13 @@ using namespace std;
 const int optionWidth = 7;
 const int descriptionWidth = 28;
 const int MAX_CUSTOMERS = 100;
+const int START_HOUR = 9;
+const int END_HOUR = 17; // Operating hours from 9 AM to 5 PM
+const int MAX_WORK_HOURS = 6; // Maximum work hours per day for an expert
+const int CONSULTATION_SLOT_DURATION = 1;
+const int TREATMENT_SLOT_DURATION = 2;
+const int DAYS_IN_WEEK = 5; // Monday to Friday
+const int MAX_SLOTS_PER_DAY = 8;  // Total slots available (8 hours)
  
 struct Customer {
     string name;
@@ -24,16 +31,13 @@ struct Customer {
     string password;
 };
 
-struct Expert {
-    string name;
-    int weeklyHours;
-    vector<bool> availability;
+enum PaymentMethod {
+    EWALLET,
+    BANK_TRANSFER,
+    CREDIT_CARD
 };
 
-struct Owner {
-    string name;
-    string contact;
-}; 
+enum class SessionType { Treatment, Consultation, Unavailable };
 
 struct Service {
     string name;
@@ -45,20 +49,56 @@ struct Service {
     Service(string name, string desc, double price) : name(name), description(desc), price(price) {}
 };
 
-enum class SessionType { Treatment, Consultation, Unavailable };
-
-enum PaymentMethod {
-    EWALLET,
-    BANK_TRANSFER,
-    CREDIT_CARD
-};
-
 struct TimeSlot {
     bool isBooked;
     string timeRange;
     SessionType type;
 };
 
+struct Expert {
+    string name;
+    Service service;
+    TimeSlot schedule[4][DAYS_IN_WEEK][MAX_SLOTS_PER_DAY];
+    int hoursWorkedPerDay[4][DAYS_IN_WEEK];
+    string dates[4];
+};
+
+struct Owner {
+    string name;
+    string contact;
+}; 
+
+struct Receipt {
+    string bookingNumber;
+    string customerName = "steve";
+    SessionType sessionType;
+    string serviceName;
+    string timeSlot;
+    PaymentMethod paymentMethod;
+    double amountPaid;
+
+    void generateReceipt() {
+        cout << "Receipt\n";
+        cout << "-------------------------------------\n";
+        cout << "Booking Number: " << bookingNumber << endl;
+        cout << "Customer Name: " << customerName << endl;
+        cout << "Session: " << (sessionType == SessionType::Treatment ? "Treatment" : "Consultation") << endl;
+        cout << "Service: " << serviceName << endl;
+        cout << "Time Slot: " << timeSlot << endl;
+        cout << "Payment Method: " << paymentMethodToString() << "\n";
+        cout << "Amount Paid: RM " << fixed << setprecision(2) << amountPaid << endl;
+        cout << "-------------------------------------\n";
+    }
+
+    string paymentMethodToString() const {
+        switch(paymentMethod) {
+            case EWALLET: return "E-Wallet";
+            case BANK_TRANSFER: return "Bank Transfer";
+            case CREDIT_CARD: return "Credit Card";
+            default: return "Unknown";
+        }
+    }
+};
 
 struct Booking {
     string referenceNum;
@@ -98,6 +138,7 @@ bool customerLogin(Customer [], int);
 bool isValidEmail(const string&);
 bool isValidPassword(const string&);
 void initializeUsers();
+void initializeExpert(Expert, string, Service);
 void adminExpertMenu();
 void aboutUs();
 int getValidatedInput(int min, int max);
@@ -174,11 +215,30 @@ void initializeUsers() {
     users.push_back(User("Joanne", "joanne123", UserType::EXPERT));
 }
 
+void initializeExpert(Expert &expert, const string &name, const Service &service) {
+    expert.name = name;
+    expert.service = service;
+        for (int week=0; week<4; ++week) {
+            for (int day = 0; day < DAYS_IN_WEEK; ++day) {
+                expert.hoursWorkedPerDay[week][day] = 0;
+                for (int slot = 0; slot < MAX_SLOTS_PER_DAY; ++slot) {
+                    expert.schedule[week][day][slot].isBooked = false;
+                    expert.schedule[week][day][slot].timeRange = to_string(START_HOUR + slot) + ":00 - " + to_string(START_HOUR + slot + 1) + ":00";
+                    expert.schedule[week][day][slot].type = SessionType::Consultation; // Default to consultation
+                }
+            }
+        }
+    }
+
+
 void customerManagement() {
     Customer customers[100];
     int choice, customerCount;
     clearScreen();
     loadCustomersFromFile(customers, customerCount);
+    cout << customers[0].email << endl;
+    cout << customers[1].email << endl;
+
 
     do {
         displayLogo();
@@ -190,7 +250,7 @@ void customerManagement() {
         cout << "| " << setw(optionWidth - 1) << "2" << " | " << setw(descriptionWidth) << "Login (Existing Customer)" << " |" << endl;
         cout << "| " << setw(optionWidth - 1) << "3" << " | " << setw(descriptionWidth) << "Back" << " |" << endl;
         cout << "+--------+------------------------------+" << endl;
-        cout << "Enter your choice: " ;
+        cout << "Enter your choice: ";
 
         choice = getValidatedInput(1,3);
 
@@ -287,7 +347,7 @@ bool customerLogin(Customer customers[], int customerCount) {
 }
 
 void saveCustomersToFile(Customer customers[], int customerCount) {
-    ofstream outFile("customers.txt");
+    ofstream outFile("customers.txt", ios::app);
 
     if (!outFile) {
         cerr << "Error opening file for writing." << endl;
@@ -578,14 +638,12 @@ void viewExperts() {
     displayLogo();
 
     cout << "\nExperts:\n";
-    Expert experts[3] = {
-        {"Alice", 40, vector<bool>(7, true)},
-        {"Bob", 30, vector<bool>(7, true)},
-        {"Charlie", 35, vector<bool>(7, true)}
-    };
-    for (const auto& expert: experts) {
-        cout << expert.name << " - Weekly hours: " << expert.weeklyHours << "\n";
-    }
+    // Expert experts[3] = {
+    //     {"Alice", 40, vector<bool>(7, true)},
+    //     {"Bob", 30, vector<bool>(7, true)},
+    //     {"Charlie", 35, vector<bool>(7, true)}
+    // };
+
 }
 
 void pauseAndClear() {
