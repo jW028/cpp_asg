@@ -5,12 +5,19 @@
 #include <sstream>
 #include <fstream>
 #include <regex>
-#include <vector>
 #ifdef _WIN32
-#include <conio.h>
+    #include <conio.h>
+    #include <direct.h>
+    #include <io.h>
+    #define ACCESS access
+    #define MKDIR(dir) _mkdir(dir)
 #else
-#include <termios.h>
-#include <unistd.h>
+    #include <termios.h>
+    #include <sys/stat.h>
+    #include <unistd.h>
+    #define ACCESS access
+    #define MKDIR(dir) mkdir(dir, 0777);
+
 #endif
 
 using namespace std;
@@ -51,9 +58,9 @@ struct TimeSlot {
 
 struct Expert {
     char name[50];
-    TimeSlot schedule[4][DAYS_IN_WEEK][MAX_SLOTS_PER_DAY];
-    int hoursWorkedPerDay[4][DAYS_IN_WEEK];
-    string dates[4];
+    TimeSlot schedule[DAYS_IN_WEEK][MAX_SLOTS_PER_DAY]; 
+    int hoursWorkedPerDay[DAYS_IN_WEEK];
+
 };
 
 struct Receipt {
@@ -79,21 +86,14 @@ struct Booking {
     int slot;
 };
 
-enum class UserType { ADMIN, EXPERT };
+enum UserType { ADMIN, EXPERT };
 
 struct User {
     string username;
     string password;
     UserType type;
     bool isLoggedIn;
-
-    User(string uname, string pwd, UserType t) 
-        : username(uname), password(pwd), type(t), isLoggedIn(false) {}
 };
-
-vector<User> users;
-User* currentUser = nullptr;
-
 
 void displayLogo();
 void displayMainMenu();
@@ -105,7 +105,6 @@ void customerSignUp(Customer []);
 int customerLogin(Customer [], int);
 bool isValidEmail(const string&);
 bool isValidPassword(const string&);
-void initializeUsers();
 void initializeExpert(Expert&, const string&);
 void initializeService(Service&, string, double);
 string paymentMethodToString(PaymentMethod);
@@ -114,11 +113,11 @@ void saveBooking(const Receipt&);
 int loadBookings(Receipt[]);
 void displayCustomerBookings(Customer customer);
 void displaySchedule(const Expert&, int);
-bool canBookSlot(const Expert&, int, int, int, SessionType);
+bool canBookSlot(const Expert&, int, int, SessionType);
 int chooseWeek();
 int* selectTimeSlot(const Expert&, int, SessionType);
 void saveScheduleToFile(const Expert&);
-void loadScheduleFromFile(Expert&);
+void loadScheduleFromFile(Expert&, int);
 PaymentMethod selectPaymentMethod();
 int loadBookingCounter(const string&);
 void saveBookingCounter(const string&, int);
@@ -145,7 +144,6 @@ void clearScreen();
 
 
 int main() {
-    initializeUsers();
     int choice;
     do {
         displayLogo();
@@ -196,28 +194,20 @@ void displayMainMenu() {
     cout << "Enter your choice: " ;
 }
 
-void initializeUsers() {
-    users.push_back(User("admin", "admin123", UserType::ADMIN));
-    users.push_back(User("Alice", "alice123", UserType::EXPERT));
-    users.push_back(User("Ben", "ben123", UserType::EXPERT));
-    users.push_back(User("Joanne", "joanne123", UserType::EXPERT));
-}
-
 void initializeExpert(Expert &expert, const string &name) {
     strcpy(expert.name, name.c_str());
-        for (int week=0; week<4; ++week) {
-            for (int day = 0; day < DAYS_IN_WEEK; ++day) {
-                expert.hoursWorkedPerDay[week][day] = 0;
-                for (int slot = 0; slot < MAX_SLOTS_PER_DAY; ++slot) {
-                    expert.schedule[week][day][slot].isBooked = false;
-                    expert.schedule[week][day][slot].timeRange = to_string(START_HOUR + slot) + ":00 - " + to_string(START_HOUR + slot + 1) + ":00";
-                    expert.schedule[week][day][slot].type = SessionType::CONSULTATION; // Default to consultation
-                }
+        for (int day = 0; day < DAYS_IN_WEEK; ++day) {
+            expert.hoursWorkedPerDay[day] = 0;
+            for (int slot = 0; slot < MAX_SLOTS_PER_DAY; ++slot) {
+                expert.schedule[day][slot].isBooked = false;
+                expert.schedule[day][slot].timeRange = to_string(START_HOUR + slot) + ":00 - " + to_string(START_HOUR + slot + 1) + ":00";
+                expert.schedule[day][slot].type = SessionType::CONSULTATION; // Default to consultation
             }
         }
     }
+    
 
-string paymentMethodToString(PaymentMethod paymentMethod)  {
+string paymentMethodToString(PaymentMethod paymentMethod) {
     switch(paymentMethod) {
         case EWALLET: return "E-Wallet";
         case BANK_TRANSFER: return "Bank Transfer";
@@ -270,14 +260,14 @@ void displaySchedule(const Expert &expert, int week) {
 
     for (int i = 0; i < MAX_SLOTS_PER_DAY; i++) {
         cout << "|" << BLUE << setw(4) << left << "[" + to_string(i+1) + "]" << RESET // Align the index
-     << setw(dayWidth - 4) << left << expert.schedule[week][0][i].timeRange; // Align the time range
+     << setw(dayWidth - 4) << left << expert.schedule[0][i].timeRange; // Align the time range
 
         for (int day = 0; day < DAYS_IN_WEEK; day++) {
-            if (expert.schedule[week][day][i].isBooked) {
+            if (expert.schedule[day][i].isBooked) {
                 padding = (dayWidth - string("Booked").length()) / 2;
                 cout << "|" << RED << string(padding, ' ') << "Booked" << string(padding, ' ');
                 cout << RESET;
-            } else if (expert.hoursWorkedPerDay[week][day] >= MAX_WORK_HOURS) {
+            } else if (expert.hoursWorkedPerDay[day] >= MAX_WORK_HOURS) {
                 padding = (dayWidth - string("Unavailable").length()) / 2;
                 int rightPadding = dayWidth - string("Unavailable").length() - padding - 1;
                 cout << "|" << RED << string(padding, ' ') << "Unavailable" << string(rightPadding, ' ');
@@ -292,13 +282,13 @@ void displaySchedule(const Expert &expert, int week) {
     }
 }
 
-bool canBookSlot(const Expert &expert, int week, int day, int slot, SessionType sessionType) {
+bool canBookSlot(const Expert &expert, int day, int slot, SessionType sessionType) {
     int duration = (sessionType == SessionType::TREATMENT) ? TREATMENT_SLOT_DURATION : CONSULTATION_SLOT_DURATION;
-    if (expert.hoursWorkedPerDay[week][day] + duration > MAX_WORK_HOURS) {
+    if (expert.hoursWorkedPerDay[day] + duration > MAX_WORK_HOURS) {
         return false;
     }
     for (int i = 0; i < duration; ++i) {
-        if (slot + i >= MAX_SLOTS_PER_DAY || expert.schedule[week][day][slot + i].isBooked) {
+        if (slot + i >= MAX_SLOTS_PER_DAY || expert.schedule[day][slot + i].isBooked) {
             return false;
         }
     }
@@ -333,7 +323,7 @@ int* selectTimeSlot(const Expert &expert,int chosenWeek, SessionType sessionType
     if (chosenWeek >=0 && chosenWeek < 4 &&
         selectedDay >= 0 && selectedDay < DAYS_IN_WEEK &&
         selectedSlot >= 0 && selectedSlot < MAX_SLOTS_PER_DAY &&
-        canBookSlot(expert, chosenWeek ,selectedDay, selectedSlot, sessionType)) {
+        canBookSlot(expert, selectedDay, selectedSlot, sessionType)) {
         result[0] = selectedDay;
         result[1] = selectedSlot;
         return result;
@@ -397,7 +387,6 @@ int loadBookings(Receipt receipts[]) {
         receipts[count].customer.email = row[2];
         receipts[count].customer.contact = row[3];
         strncpy(receipts[count].expert.name, row[4].c_str(), sizeof(receipts[count].expert.name) - 1);
-        receipts[count].expert.name[sizeof(receipts[count].expert.name) - 1] = '\0'; // Ensure null termination
         receipts[count].serviceName = row[5];
         receipts[count].sessionType = static_cast<SessionType> (stoi(row[6]));
         receipts[count].date =row[7];
@@ -416,8 +405,9 @@ void displayCustomerBookings(Customer customer) {
     int receiptCount = loadBookings(allReceipts);
 
     cout << "Bookings for " << customer.name << endl;
+    cout << "+--------+------------------------------+" << endl;
     for (int i=0; i<receiptCount; ++i) {
-        cout << "Booking Number: " << allReceipts[i].bookingNumber << endl
+        cout << "\nBooking Number: " << allReceipts[i].bookingNumber << endl
              << "Service: " << allReceipts[i].serviceName << endl
              << "Expert: " << allReceipts[i].expert.name << endl
              << "Date: " << allReceipts[i].date << " October 2024" << endl
@@ -426,34 +416,38 @@ void displayCustomerBookings(Customer customer) {
     }
 
 }
+void createDirectoryIfNotExists(const string &directoryName) {
+    if (ACCESS(directoryName.c_str(), 0) != 0) {
+        MKDIR(directoryName.c_str());
+    }
 
-void saveScheduleToFile(const Expert &expert) {
-    string filename = string(expert.name) + "_schedule.txt";
+}
+
+void saveScheduleToFile(const Expert &expert, int weekNumber) {
+    createDirectoryIfNotExists("schedules");
+    string filename = "schedules/" + string(expert.name) + "_week" + to_string(weekNumber + 1) + "_schedule.txt";
     ofstream outSchedule(filename);
 
     if (outSchedule.is_open()) {
-        for (int week = 0; week < 4; ++week) {
-            outSchedule << "Week " << week + 1 << endl;
-            for (int day = 0; day < DAYS_IN_WEEK; ++day) {
-                outSchedule << "Day " << day + 1 << endl; 
-                outSchedule << expert.hoursWorkedPerDay[week][day];
+        for (int day = 0; day < DAYS_IN_WEEK; ++day) {
+            outSchedule << "Day " << day + 1 << endl; 
+            outSchedule << expert.hoursWorkedPerDay[day];
 
-                for (int slot = 0; slot < MAX_SLOTS_PER_DAY; ++slot) {
-                    outSchedule << ' ' << expert.schedule[week][day][slot].isBooked;
-                    outSchedule << ' ' << (expert.schedule[week][day][slot].type == SessionType::TREATMENT ? "T" : 
-                                    (expert.schedule[week][day][slot].type == SessionType::CONSULTATION ? "C" : "U")) << ' ';
-                }
-                outSchedule << endl;
+            for (int slot = 0; slot < MAX_SLOTS_PER_DAY; ++slot) {
+                outSchedule << ' ' << expert.schedule[day][slot].isBooked;
+                outSchedule << ' ' << (expert.schedule[day][slot].type == SessionType::TREATMENT ? "T" : 
+                                (expert.schedule[day][slot].type == SessionType::CONSULTATION ? "C" : "U")) << ' ';
             }
-    }
+            outSchedule << endl;
+        }
     outSchedule.close();
     } else {
         cerr << "Error opening file for writing: " << filename << endl;
     }
 }
 
-void loadScheduleFromFile(Expert &expert) {
-    string filename = string(expert.name) + "_schedule.txt";
+void loadScheduleFromFile(Expert &expert, int weekNumber) {
+    string filename = "schedules/" + string(expert.name) + "_week" + to_string(weekNumber + 1) + "_schedule.txt";
     ifstream scheduleFile(filename);
 
     if (scheduleFile.is_open()) {
@@ -462,22 +456,18 @@ void loadScheduleFromFile(Expert &expert) {
         int day = -1;
 
         while (getline(scheduleFile, line)) {
-            if (line.find("Week") == 0) {
-                week = stoi(line.substr(5)) -1;
-                continue;
-            }
             if (line.find("Day") == 0) {
                 day = stoi(line.substr(4)) -1;
                 continue;
             }
-            if (week >= 0 && day >= 0) {
+            if (day >= 0) {
                 stringstream ss(line);
                 int hoursWorked;
                 if (!(ss >> hoursWorked)) {
                     cerr << "Error parsing hoursWorked: " << line << endl;
                     continue;
                 }
-                expert.hoursWorkedPerDay[week][day] = hoursWorked;
+                expert.hoursWorkedPerDay[day] = hoursWorked;
                 
                 for (int slot = 0; slot < MAX_SLOTS_PER_DAY; ++slot) {
                     char isBooked, typeChar;
@@ -485,10 +475,10 @@ void loadScheduleFromFile(Expert &expert) {
                         cerr << "Error reading slot data for Week " << week + 1 << " Day " << day + 1 << " from line: " << line << endl;
                         break;
                     }
-                    expert.schedule[week][day][slot].isBooked = (isBooked == '1');
-                    if (typeChar == 'T') expert.schedule[week][day][slot].type = SessionType::TREATMENT;
-                    else if (typeChar == 'C') expert.schedule[week][day][slot].type = SessionType::CONSULTATION;
-                    else expert.schedule[week][day][slot].type = SessionType::UNAVAILABLE;
+                    expert.schedule[day][slot].isBooked = (isBooked == '1');
+                    if (typeChar == 'T') expert.schedule[day][slot].type = SessionType::TREATMENT;
+                    else if (typeChar == 'C') expert.schedule[day][slot].type = SessionType::CONSULTATION;
+                    else expert.schedule[day][slot].type = SessionType::UNAVAILABLE;
                 }
             }
         }
@@ -580,9 +570,9 @@ void printReceipt (const string &filename) {
 
 
 void makeBooking(Expert &expert, Service service, SessionType sessionType, Customer &customer) {
-    loadScheduleFromFile(expert);
     string weekStartDates[4] = {"2024-070", "2024-09-09", "2024-09-16", "2024-09-23"};    
     int chosenWeek = chooseWeek();
+    loadScheduleFromFile(expert, chosenWeek);
     displaySchedule(expert, chosenWeek);
     double price = sessionType == SessionType::TREATMENT ? service.price : 60.0;
 
@@ -596,10 +586,10 @@ void makeBooking(Expert &expert, Service service, SessionType sessionType, Custo
     if (day != -1 && slot != -1) {
         int duration = (sessionType == SessionType::TREATMENT) ? TREATMENT_SLOT_DURATION : CONSULTATION_SLOT_DURATION;
         for (int i = 0; i < duration; ++i) {
-            expert.schedule[chosenWeek][day][slot + i].isBooked = true;
-            expert.schedule[chosenWeek][day][slot + i].type = sessionType;
+            expert.schedule[day][slot + i].isBooked = true;
+            expert.schedule[day][slot + i].type = sessionType;
         }
-        expert.hoursWorkedPerDay[chosenWeek][day] += duration;
+        expert.hoursWorkedPerDay[day] += duration;
 
         string startTime = to_string(START_HOUR + slot) + ":00";
         string endTime = to_string(START_HOUR + slot + duration) + ":00";
@@ -621,7 +611,7 @@ void makeBooking(Expert &expert, Service service, SessionType sessionType, Custo
             generateReceipt(receipt);
 
             cout << "You have successfully booked the slot on Day " << day + 1
-                << " from " << expert.schedule[chosenWeek][day][slot].timeRange.substr(0, 5) << " to " << endTime
+                << " from " << expert.schedule[day][slot].timeRange.substr(0, 5) << " to " << endTime
                 << " with " << expert.name << " for " << service.name << " (" 
                 << (sessionType == SessionType::TREATMENT ? "Treatment" : "Consultation") << ")." << endl;
 
@@ -630,7 +620,7 @@ void makeBooking(Expert &expert, Service service, SessionType sessionType, Custo
             printReceipt(receiptFileName);
 
             saveBooking(receipt);
-            saveScheduleToFile(expert); // Save updated schedule to file
+            saveScheduleToFile(expert, chosenWeek); // Save updated schedule to file
         } else {
             cout << "Booking cancelled." << endl;
         }
@@ -824,7 +814,7 @@ void customerMenu(Customer &customer) {
         cout << "| " << setw(optionWidth - 1) << "3" << " | " << setw(descriptionWidth) << "View Experts" << " |" << endl;
         cout << "| " << setw(optionWidth - 1) << "4" << " | " << setw(descriptionWidth) << "Check Schedule" << " |" << endl;
         cout << "| " << setw(optionWidth - 1) << "5" << " | " << setw(descriptionWidth) << "Make Booking" << " |" << endl;
-        cout << "| " << setw(optionWidth - 1) << "6" << " | " << setw(descriptionWidth) << "View Booked Schedule" << " |" << endl;
+        cout << "| " << setw(optionWidth - 1) << "6" << " | " << setw(descriptionWidth) << "View My Bookings" << " |" << endl;
         cout << "| " << setw(optionWidth - 1) << "7" << " | " << setw(descriptionWidth) << "Return to Main Menu" << " |" << endl;
 
         cout << "+--------+------------------------------+" << endl;
@@ -838,7 +828,7 @@ void customerMenu(Customer &customer) {
             case 3: viewExperts(); break;
             // case 4: checkSchedule(); break;
             // case 5: makeBooking(); break;
-            // case 6: viewBookedSchedule(); break;
+            case 6: displayCustomerBookings(customer); break;
             case 7: cout << "Returning to Main Menu\n"; break;
         }
 
@@ -895,6 +885,14 @@ string getPasswordInput() {
 bool login() {
     clearScreen();
     displayLogo();
+
+    User alice = {"alice123", "Alice1234$", UserType::EXPERT};
+    User bob = {"bob123", "Bob1234$", UserType::EXPERT};
+    User carol = {"carol123", "Carol1234$", UserType::EXPERT};
+    User admin = {"admin123", "Admin1234$", UserType::ADMIN};
+
+    User users[] = {alice, bob, carol, admin};
+
     string username, password;
     cout << "Enter username: ";
     cin >> username;
@@ -902,28 +900,26 @@ bool login() {
     cout << "Enter password: ";
     password = getPasswordInput();
 
-    for (auto& user: users) {
-        if (user.username == username && user.password == password) {
-            user.isLoggedIn = true;
-            currentUser = &user;
-            cout << "Login successful. Welcome, " << username << "!\n";
+    for (int i=0; i<4; i++) {
+        if (users[i].username == username && users[i].password == password) {
             return true;
         }
     }
+
     cout << "Login failed. Please try again.\n";
     pauseAndClear();
     return false;
 }
 
-void logout() {
-    if (currentUser) {
-        currentUser->isLoggedIn = false;
-        cout << "Logged out successfully. Goodbye, " << currentUser->username << "!\n";
-        currentUser = nullptr;
-    } else {
-        cout << "No user is currently logged in.\n";
-    }
-}
+// void logout() {
+//     if (currentUser) {
+//         currentUser->isLoggedIn = false;
+//         cout << "Logged out successfully. Goodbye, " << currentUser->username << "!\n";
+//         currentUser = nullptr;
+//     } else {
+//         cout << "No user is currently logged in.\n";
+//     }
+// }
 
 void adminExpertMenu() {
     const int optionWidth = 7;
@@ -1068,11 +1064,7 @@ void viewExperts() {
     displayLogo();
 
     cout << "\nExperts:\n";
-    // Expert experts[3] = {
-    //     {"Alice", 40, vector<bool>(7, true)},
-    //     {"Bob", 30, vector<bool>(7, true)},
-    //     {"Charlie", 35, vector<bool>(7, true)}
-    // };
+    
 
 }
 
