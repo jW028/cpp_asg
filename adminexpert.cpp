@@ -10,7 +10,7 @@
     #include <conio.h>
     #include <direct.h>
     #include <io.h>
-    #define ACCESS access
+    #define ACCESS _access
     #define MKDIR(dir) _mkdir(dir)
 #else
     #include <termios.h>
@@ -618,7 +618,8 @@ void generateReceiptFile(const Receipt &receipt, const string& filename) {
 
 void printReceipt (const string &filename) {
     #ifdef _WIN32
-    ShellExecute(NULL, "open", filename.c_str(), NULL, NULL, SW_SHOWNORMAL); 
+    // ShellExecute expects wide-character strings for the operation and filename
+    ShellExecute(NULL, L"open", wstring(filename.begin(), filename.end()).c_str(), NULL, NULL, SW_SHOWNORMAL);
     #else   
     string command = "open " + filename;
     system(command.c_str());
@@ -972,7 +973,7 @@ bool login(UserType &userType, string &userName) {
     string username, password;
     cout << "Enter username: ";
     cin >> username;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cin.ignore(1000, '\n');
     cout << "Enter password: ";
     password = getPasswordInput();
 
@@ -1451,7 +1452,7 @@ void clearScreen() {
 
 void pauseAndClear() {
     cout << "\nPress Enter to continue...";
-    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    cin.ignore(1000, '\n');
     cin.get();
     clearScreen();
 }
