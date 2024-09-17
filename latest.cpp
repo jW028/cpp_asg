@@ -1780,7 +1780,7 @@ void clearScreen() {
 
 void pauseAndClear() {
     cout << "\nPress Enter to continue...";
-    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    cin.ignore(1000, '\n');
     cin.get();
     clearScreen();
 }
