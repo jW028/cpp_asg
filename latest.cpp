@@ -106,7 +106,6 @@ void customerMenu(Customer&);
 void customerSignUp(Customer[]);
 int customerLogin(Customer[], int);
 bool isValidName(const string&);
-bool isValidContact(const string&);
 bool isValidEmail(const string&);
 bool isValidPassword(const string&);
 bool isValidPhoneNumber(const string&);
@@ -256,15 +255,15 @@ void displaySchedule(const Expert& expert, int week) {
         return;
     }
 
-    const int dayWidth = 19;  // Width for each day (3 slots + separators)
-    const int slotWidth = 12;
+    const int DAYWIDTH = 19;  // Width for each day (3 slots + separators)
+    const int SLOTWIDTH = 12;
     const string days[5] = { "Mon", "Tue", "Wed", "Thu", "Fri" };
 
     int startDate = 1 + (week * 7);
-    int padding = (dayWidth - 1 - days[0].length()) / 2;
+    int padding = (DAYWIDTH - 1 - days[0].length()) / 2;
 
-    cout << string(dayWidth * 6 + 2, '-') << endl;
-    cout << "|" << setw(dayWidth) << left << "Time";
+    cout << string(DAYWIDTH * 6 + 2, '-') << endl;
+    cout << "|" << setw(DAYWIDTH) << left << "Time";
 
     for (int i = 0; i < 5; ++i) {
         int date = startDate + i;
@@ -275,16 +274,16 @@ void displaySchedule(const Expert& expert, int week) {
         else {
             header = days[i] + " (" + to_string(date) + ")";
         }
-        padding = (dayWidth - header.length()) / 2;
-        cout << "|" << setw(padding) << "" << header << setw(dayWidth - 1 - padding - header.length()) << "";
+        padding = (DAYWIDTH - header.length()) / 2;
+        cout << "|" << setw(padding) << "" << header << setw(DAYWIDTH - 1 - padding - header.length()) << "";
     }
 
     cout << "|" << endl;
-    cout << string(dayWidth * 6 + 2, '-') << endl;
+    cout << string(DAYWIDTH * 6 + 2, '-') << endl;
 
     for (int i = 0; i < MAX_SLOTS_PER_DAY; i++) {
         cout << "|" << BLUE << setw(4) << left << "[" + to_string(i + 1) + "]" << RESET // Align the index
-            << setw(dayWidth - 4) << left << expert.schedule[0][i].timeRange; // Align the time range
+            << setw(DAYWIDTH - 4) << left << expert.schedule[0][i].timeRange; // Align the time range
 
         for (int day = 0; day < DAYS_IN_WEEK; day++) {
             int currentDate = startDate + day;
@@ -292,31 +291,31 @@ void displaySchedule(const Expert& expert, int week) {
             // Determine the status based on the date
             if (currentDate > 31) {
                 // Beyond the last valid day, mark as "Unavailable"
-                padding = (dayWidth - string("Unavailable").length()) / 2;
-                int rightPadding = dayWidth - string("Unavailable").length() - padding - 1;
+                padding = (DAYWIDTH - string("Unavailable").length()) / 2;
+                int rightPadding = DAYWIDTH - string("Unavailable").length() - padding - 1;
                 cout << "|" << RED << string(padding, ' ') << "Unavailable" << string(rightPadding, ' ') << RESET;
             }
             else if (expert.schedule[day][i].isBooked) {
                 // Slot is booked
-                padding = (dayWidth - string("Booked").length()) / 2;
+                padding = (DAYWIDTH - string("Booked").length()) / 2;
                 cout << "|" << RED << string(padding, ' ') << "Booked" << string(padding, ' ') << RESET;
             }
             else if (expert.hoursWorkedPerDay[day] >= MAX_WORK_HOURS) {
                 // Slot is unavailable due to max hours worked
-                padding = (dayWidth - string("Unavailable").length()) / 2;
-                int rightPadding = dayWidth - string("Unavailable").length() - padding - 1;
+                padding = (DAYWIDTH - string("Unavailable").length()) / 2;
+                int rightPadding = DAYWIDTH - string("Unavailable").length() - padding - 1;
                 cout << "|" << RED << string(padding, ' ') << "Unavailable" << string(rightPadding, ' ') << RESET;
             }
             else {
                 // Slot is open
-                padding = (dayWidth - string("Open").length()) / 2;
+                padding = (DAYWIDTH - string("Open").length()) / 2;
                 cout << "|" << GREEN << string(padding, ' ') << "Open" << string(padding, ' ') << RESET;
             }
         }
         cout << "|\n";
     }
 
-    cout << string(dayWidth * 6 + 2, '-') << "\n\n";
+    cout << string(DAYWIDTH * 6 + 2, '-') << "\n\n";
 }
 
 
@@ -361,8 +360,8 @@ void displayCalendar(Expert& expert) {
     const string BLUE = "\033[34m";   // Labels
     const string RESET = "\033[0m";   // Reset formatting
 
-    const int dayWidth = 12;  // Width for each day's display
-    const int slotWidth = 12;
+    const int DAYWIDTH = 12;  // Width for each day's display
+    const int SLOTWIDTH = 12;
     const string days[5] = { "Mon", "Tue", "Wed", "Thu", "Fri" };
 
     // Display header for weeks
@@ -384,16 +383,16 @@ void displayCalendar(Expert& expert) {
         cout << "Week " << (week + 1) << ":" << "(" << GREEN << availableSlots << RESET << " slots available)" << endl;
 
         // Display days and dates for the week
-        cout << string(dayWidth * 6 + 2, '-') << endl;
-        cout << "|" << setw(dayWidth) << left << "Day";
+        cout << string(DAYWIDTH * 6 + 2, '-') << endl;
+        cout << "|" << setw(DAYWIDTH) << left << "Day";
         for (int i = 0; i < 5; ++i) {
             int date = startDate + i;
             if (week == 4 && date > 31) break;  // Stop after the 31st
             string header = days[i] + " (" + to_string(date) + ")";
-            cout << "|" << setw(dayWidth - 1) << left << header;
+            cout << "|" << setw(DAYWIDTH - 1) << left << header;
         }
         cout << "|" << endl;
-        cout << string(dayWidth * 6 + 2, '-') << "\n\n";
+        cout << string(DAYWIDTH * 6 + 2, '-') << "\n\n";
 
         // Display the slots for each day
     }
@@ -437,7 +436,7 @@ int* selectTimeSlot(const Expert& expert, int chosenWeek, SessionType sessionTyp
 void saveBooking(const Receipt& receipt) {
     ofstream bookingsFile("bookings.txt", ios::app);
     if (!bookingsFile.is_open()) {
-        cerr << "Error: Unable to open receipts file for writing." << endl;
+        cerr << "Error: Unable to open bookings file for writing." << endl;
         return;
     }
 
@@ -633,8 +632,6 @@ void displayBookingInfo(Receipt receipt) {
     cout << "\n--------------------------------------------\n";
     cout << "Please arrive 10 minutes before your time slot.\n";
     cout << "--------------------------------------------\n";
-
-
 }
 
 void displayCustomerBookings(Customer customer) {
@@ -652,7 +649,7 @@ void displayCustomerBookings(Customer customer) {
     cout << "\n--------------------------------------------\n";
     cout << "Please arrive 10 minutes before your time slot.\n";
     cout << "--------------------------------------------\n";
-    Receipt customerReceipts[15]; // Store customer receipts, assuming a customer can book up to 15 times
+    Receipt customerReceipts[30]; // Store customer receipts, assuming a customer can book up to 30 times
     int bookingCount = 0;
 
     bool hasBookings = false;
@@ -678,7 +675,7 @@ void displayCustomerBookings(Customer customer) {
             cout << "| " << setw(2) << BLUE << "[" << i + 1 << "]" << RESET << " | " << setw(72) << bookingInfo << " |" << endl;
         }
         cout << "--------------------------------------------------------------------------+" << endl;
-        cout << "Select a booking to view its information (how to go back from here): ";
+        cout << "Select a booking to view its information: ";
 
         choice = getValidatedInput(1, bookingCount);
         displayBookingInfo(customerReceipts[choice - 1]);
@@ -1135,9 +1132,10 @@ bool isValidName(const string& name) {
     return regex_match(name, pattern);
 }
 
-bool isValidContact(const string& contact) {
-    const regex pattern("^\\d{3}-\\d{3}-\\d{4}$");
-    return regex_match(contact, pattern);
+bool isValidPhoneNumber(const string &phoneNumber) {
+// Check for formats like 01X-XXXXXXX or 01X-XXXXXXXX
+regex phonePattern("^(01[0-9]-[0-9]{7,8})$");
+return regex_match(phoneNumber, phonePattern);
 }
 
 bool isValidEmail(const string& email) {
@@ -1148,12 +1146,6 @@ bool isValidEmail(const string& email) {
 bool isValidPassword(const string& password) {
     const regex pattern("(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*])[a-zA-Z\\d!@#$%^&*]{8,}");
     return regex_match(password, pattern);
-}
-
-bool isValidPhoneNumber(const string &phoneNumber) {
-// Check for formats like 01X-XXXXXXX or 01X-XXXXXXXX
-regex phonePattern("^(01[0-9]-[0-9]{7,8})$");
-return regex_match(phoneNumber, phonePattern);
 }
 
 // Bank Account Number Validation (10-12 digits)
@@ -1213,10 +1205,10 @@ void customerSignUp(Customer customers[]) {
     do {
         cout << "Enter your contact number: ";
         getline(cin, newCustomer.contact);
-        if (!isValidContact(newCustomer.contact)) {
+        if (!isValidPhoneNumber(newCustomer.contact)) {
             cout << "\nInvalid contact number format.\nExample of contact: 123-456-7890\nPlease try again.\n";
         }
-    } while (!isValidContact(newCustomer.contact));
+    } while (!isValidPhoneNumber(newCustomer.contact));
 
     do {
         cout << "Enter your email: ";
@@ -1716,12 +1708,6 @@ void viewCustomers(string expertName = "") {
     }
     int choice;
     clearScreen();
-    if (expertName.empty()) {
-        cout << "Empty name" << endl;
-    }
-    else {
-        cout << expertName << endl;
-    }
     cout << "+-----------+--------------------------------------------+" << endl;
     cout << "| Option    | Description                                |" << endl;
     cout << "+-----------+--------------------------------------------+" << endl;
@@ -1749,7 +1735,6 @@ void viewCustomers(string expertName = "") {
         }
         displayCustomers(customers, customerCount, bookingCounts);
         break;
-
     }
 }
 
