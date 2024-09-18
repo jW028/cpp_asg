@@ -6,18 +6,18 @@
 #include <fstream>
 #include <regex>
 #ifdef _WIN32
-    #include <windows.h>
-    #include <conio.h>
-    #include <direct.h>
-    #include <io.h>
-    #define ACCESS _access
-    #define MKDIR(dir) _mkdir(dir)
+#include <windows.h>
+#include <conio.h>
+#include <direct.h>
+#include <io.h>
+#define ACCESS _access
+#define MKDIR(dir) _mkdir(dir)
 #else
-    #include <termios.h>
-    #include <sys/stat.h>
-    #include <unistd.h>
-    #define ACCESS access
-    #define MKDIR(dir) mkdir(dir, 0777)
+#include <termios.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#define ACCESS access
+#define MKDIR(dir) mkdir(dir, 0777)
 #endif
 #define START_HOUR 9
 #define END_HOUR 17 // Operating hours from 9 AM to 5 PM
@@ -30,7 +30,7 @@
 #define DESC_WIDTH 28
 
 using namespace std;
- 
+
 struct Customer {
     string name;
     string email;
@@ -60,7 +60,7 @@ struct TimeSlot {
 
 struct Expert {
     string name;
-    TimeSlot schedule[DAYS_IN_WEEK][MAX_SLOTS_PER_DAY]; 
+    TimeSlot schedule[DAYS_IN_WEEK][MAX_SLOTS_PER_DAY];
     int hoursWorkedPerDay[DAYS_IN_WEEK];
 
 };
@@ -103,12 +103,18 @@ void customerManagement();
 void loadCustomersFromFile(Customer[], int&);
 void saveCustomersToFile(Customer[], int);
 void customerMenu(Customer&);
-void customerSignUp(Customer []);
-int customerLogin(Customer [], int);
+void customerSignUp(Customer[]);
+int customerLogin(Customer[], int);
 bool isValidName(const string&);
 bool isValidContact(const string&);
 bool isValidEmail(const string&);
 bool isValidPassword(const string&);
+bool isValidPhoneNumber(const string&);
+bool isValidBankAccountNumber(const string&);
+bool isValidCreditCard(const string&, const string&);
+string generateOTP();
+bool verifyOTP(const string&);
+bool handlePaymentMethod(PaymentMethod);
 void initializeExpert(Expert&, const string&);
 void initializeService(Service&, string, double);
 string paymentMethodToString(PaymentMethod);
@@ -169,31 +175,31 @@ int main() {
     int choice;
     UserType userType;
     string userName;
+
     do {
         displayLogo();
         displayMainMenu();
 
-
         choice = getValidatedInput(1, 3);
 
-        switch(choice) {
-            case 1:
-                customerManagement();
-                break;
-            case 2:
-                if (login(userType, userName)) {
-                    adminExpertMenu(userType, userName);
-                }
-                break;
-            case 3:
-                cout << "Exiting program...\n";
-                return 0;
-                break;
+        switch (choice) {
+        case 1:
+            customerManagement();
+            break;
+        case 2:
+            if (login(userType, userName)) {
+                adminExpertMenu(userType, userName);
+            }
+            break;
+        case 3:
+            cout << "Exiting program...\n";
+            return 0;
         }
     } while (choice != 3);
 
-    choice = getValidatedInput(1, 3);
+    return 0;
 }
+
 
 void displayLogo() {
     cout << "   __             _                                       __                              " << endl;
@@ -201,45 +207,45 @@ void displayLogo() {
     cout << " / /  / _ \\ / _ \\| |/ / __| '_ ` _ \\ / _` \\ \\/ /\\ \\/ /  / /  / _ \\| | | | '_ \\ / _` |/ _ \\" << endl;
     cout << "/ /__| (_) | (_) |   <\\__ \\ | | | | | (_| |>  <  >  <  / /__| (_) | |_| | | | | (_| |  __/" << endl;
     cout << "\\____/\\___/ \\___/|_|\\_\\___/_| |_| |_|\\__,_/_/\\_\\/_/\\_\\ \\____/\\___/ \\__,_|_| |_|\\__, |\\___|" << endl;
-    cout << "                                                                               |___/      " << endl; 
+    cout << "                                                                               |___/      " << endl;
 }
 
 
 void displayMainMenu() {
     cout << "Main Menu:\n";
     cout << "+--------+------------------------------+" << endl;
-    cout << "| " << setw(OPTION_WIDTH - 1)  << "Option" << " | " << left << setw(DESC_WIDTH)  <<  "Description" << " |" << endl;
+    cout << "| " << setw(OPTION_WIDTH - 1) << "Option" << " | " << left << setw(DESC_WIDTH) << "Description" << " |" << endl;
     cout << "+--------+------------------------------+" << endl;
     cout << "| " << setw(OPTION_WIDTH - 1) << "1" << " | " << setw(DESC_WIDTH) << "Customer" << " |" << endl;
     cout << "| " << setw(OPTION_WIDTH - 1) << "2" << " | " << setw(DESC_WIDTH) << "Staff" << " |" << endl;
     cout << "| " << setw(OPTION_WIDTH - 1) << "3" << " | " << setw(DESC_WIDTH) << "Exit" << " |" << endl;
     cout << "+--------+------------------------------+" << endl;
-    cout << "Enter your choice: " ;
+    cout << "Enter your choice: ";
 }
 
-void initializeExpert(Expert &expert, const string &name) {
+void initializeExpert(Expert& expert, const string& name) {
     expert.name = name;
-        for (int day = 0; day < DAYS_IN_WEEK; ++day) {
-            expert.hoursWorkedPerDay[day] = 0;
-            for (int slot = 0; slot < MAX_SLOTS_PER_DAY; ++slot) {
-                expert.schedule[day][slot].isBooked = false;
-                expert.schedule[day][slot].timeRange = to_string(START_HOUR + slot) + ":00 - " + to_string(START_HOUR + slot + 1) + ":00";
-                expert.schedule[day][slot].type = CONSULTATION; // Default to consultation
-            }
+    for (int day = 0; day < DAYS_IN_WEEK; ++day) {
+        expert.hoursWorkedPerDay[day] = 0;
+        for (int slot = 0; slot < MAX_SLOTS_PER_DAY; ++slot) {
+            expert.schedule[day][slot].isBooked = false;
+            expert.schedule[day][slot].timeRange = to_string(START_HOUR + slot) + ":00 - " + to_string(START_HOUR + slot + 1) + ":00";
+            expert.schedule[day][slot].type = CONSULTATION; // Default to consultation
         }
     }
-    
+}
+
 
 string paymentMethodToString(PaymentMethod paymentMethod) {
-    switch(paymentMethod) {
-        case EWALLET: return "E-Wallet";
-        case BANK_TRANSFER: return "Bank Transfer";
-        case CREDIT_CARD: return "Credit Card";
-        default: return "Unknown";
+    switch (paymentMethod) {
+    case EWALLET: return "E-Wallet";
+    case BANK_TRANSFER: return "Bank Transfer";
+    case CREDIT_CARD: return "Credit Card";
+    default: return "Unknown";
     }
 }
 
-void displaySchedule(const Expert &expert, int week) {
+void displaySchedule(const Expert& expert, int week) {
     const string RED = "\033[31m";
     const string GREEN = "\033[32m";
     const string BLUE = "\033[34m";
@@ -252,7 +258,7 @@ void displaySchedule(const Expert &expert, int week) {
 
     const int dayWidth = 19;  // Width for each day (3 slots + separators)
     const int slotWidth = 12;
-    const string days[5] = {"Mon", "Tue", "Wed", "Thu", "Fri"};
+    const string days[5] = { "Mon", "Tue", "Wed", "Thu", "Fri" };
 
     int startDate = 1 + (week * 7);
     int padding = (dayWidth - 1 - days[0].length()) / 2;
@@ -265,7 +271,8 @@ void displaySchedule(const Expert &expert, int week) {
         string header;
         if (date > 31) {
             header = days[i] + " (Unavailable)";
-        } else {
+        }
+        else {
             header = days[i] + " (" + to_string(date) + ")";
         }
         padding = (dayWidth - header.length()) / 2;
@@ -276,8 +283,8 @@ void displaySchedule(const Expert &expert, int week) {
     cout << string(dayWidth * 6 + 2, '-') << endl;
 
     for (int i = 0; i < MAX_SLOTS_PER_DAY; i++) {
-        cout << "|" << BLUE << setw(4) << left << "[" + to_string(i+1) + "]" << RESET // Align the index
-             << setw(dayWidth - 4) << left << expert.schedule[0][i].timeRange; // Align the time range
+        cout << "|" << BLUE << setw(4) << left << "[" + to_string(i + 1) + "]" << RESET // Align the index
+            << setw(dayWidth - 4) << left << expert.schedule[0][i].timeRange; // Align the time range
 
         for (int day = 0; day < DAYS_IN_WEEK; day++) {
             int currentDate = startDate + day;
@@ -288,16 +295,19 @@ void displaySchedule(const Expert &expert, int week) {
                 padding = (dayWidth - string("Unavailable").length()) / 2;
                 int rightPadding = dayWidth - string("Unavailable").length() - padding - 1;
                 cout << "|" << RED << string(padding, ' ') << "Unavailable" << string(rightPadding, ' ') << RESET;
-            } else if (expert.schedule[day][i].isBooked) {
+            }
+            else if (expert.schedule[day][i].isBooked) {
                 // Slot is booked
                 padding = (dayWidth - string("Booked").length()) / 2;
                 cout << "|" << RED << string(padding, ' ') << "Booked" << string(padding, ' ') << RESET;
-            } else if (expert.hoursWorkedPerDay[day] >= MAX_WORK_HOURS) {
+            }
+            else if (expert.hoursWorkedPerDay[day] >= MAX_WORK_HOURS) {
                 // Slot is unavailable due to max hours worked
                 padding = (dayWidth - string("Unavailable").length()) / 2;
                 int rightPadding = dayWidth - string("Unavailable").length() - padding - 1;
                 cout << "|" << RED << string(padding, ' ') << "Unavailable" << string(rightPadding, ' ') << RESET;
-            } else {
+            }
+            else {
                 // Slot is open
                 padding = (dayWidth - string("Open").length()) / 2;
                 cout << "|" << GREEN << string(padding, ' ') << "Open" << string(padding, ' ') << RESET;
@@ -311,7 +321,7 @@ void displaySchedule(const Expert &expert, int week) {
 
 
 
-bool canBookSlot(const Expert &expert, int day, int slot, SessionType sessionType) {
+bool canBookSlot(const Expert& expert, int day, int slot, SessionType sessionType) {
     int duration = (sessionType == TREATMENT) ? TREATMENT_SLOT_DURATION : CONSULTATION_SLOT_DURATION;
     if (expert.hoursWorkedPerDay[day] + duration > MAX_WORK_HOURS) {
         return false;
@@ -336,7 +346,7 @@ string trim(const string& str) {
 int chooseWeek() {
     int choice;
     cout << "Enter week number (1-5): ";
-    choice = getValidatedInput(1,5);
+    choice = getValidatedInput(1, 5);
 
     if (choice < 1 || choice > 5) {
         cout << "Invalid choice. Please select a valid week.\n";
@@ -345,7 +355,7 @@ int chooseWeek() {
     return --choice;
 }
 
-void displayCalendar(Expert &expert) {
+void displayCalendar(Expert& expert) {
     const string RED = "\033[31m";    // Booked slots
     const string GREEN = "\033[32m";  // Open slots
     const string BLUE = "\033[34m";   // Labels
@@ -353,11 +363,11 @@ void displayCalendar(Expert &expert) {
 
     const int dayWidth = 12;  // Width for each day's display
     const int slotWidth = 12;
-    const string days[5] = {"Mon", "Tue", "Wed", "Thu", "Fri"};
-    
+    const string days[5] = { "Mon", "Tue", "Wed", "Thu", "Fri" };
+
     // Display header for weeks
     cout << "\nAvailable Weeks and Days:" << endl;
-    
+
     // Loop through each week and day
     for (int week = 0; week < 5; ++week) {
         loadScheduleFromFile(expert, week);
@@ -390,25 +400,26 @@ void displayCalendar(Expert &expert) {
 }
 
 
-int* selectTimeSlot(const Expert &expert,int chosenWeek, SessionType sessionType) {
+int* selectTimeSlot(const Expert& expert, int chosenWeek, SessionType sessionType) {
     static int result[2];
     int selectedDay;
     if (chosenWeek != 4) {
         cout << "Select a day (1-5 for Mon-Fri): ";
-        selectedDay = getValidatedInput(1,5);
-        selectedDay -= 1;
-    } else {
-        cout << "Select a day (1-3 for Mon-Wed): ";
-        selectedDay = getValidatedInput(1,3);
+        selectedDay = getValidatedInput(1, 5);
         selectedDay -= 1;
     }
-    
+    else {
+        cout << "Select a day (1-3 for Mon-Wed): ";
+        selectedDay = getValidatedInput(1, 3);
+        selectedDay -= 1;
+    }
+
     cout << "Select a starting time slot (1-" << MAX_SLOTS_PER_DAY << "): ";
     int selectedSlot;
-    selectedSlot = getValidatedInput(1,8);
+    selectedSlot = getValidatedInput(1, 8);
     selectedSlot -= 1;
 
-    if (chosenWeek >=0 && chosenWeek < 5 &&
+    if (chosenWeek >= 0 && chosenWeek < 5 &&
         selectedDay >= 0 && selectedDay < DAYS_IN_WEEK &&
         selectedSlot >= 0 && selectedSlot < MAX_SLOTS_PER_DAY &&
         canBookSlot(expert, selectedDay, selectedSlot, sessionType)) {
@@ -430,23 +441,23 @@ void saveBooking(const Receipt& receipt) {
         return;
     }
 
-    bookingsFile << receipt.bookingNumber << ", " 
-         << receipt.customer.name << ", "
-         << receipt.customer.email << ", " 
-         << receipt.customer.contact << ", "
-         << receipt.expert.name << ", "
-         << receipt.serviceName << ", "
-         << static_cast<int>(receipt.sessionType) << ", "
-         << receipt.date << ", " 
-         << receipt.timeSlot << ", "
-         << static_cast<int> (receipt.paymentMethod) << ", "
-         << receipt.amountPaid << "\n";
+    bookingsFile << receipt.bookingNumber << ", "
+        << receipt.customer.name << ", "
+        << receipt.customer.email << ", "
+        << receipt.customer.contact << ", "
+        << receipt.expert.name << ", "
+        << receipt.serviceName << ", "
+        << static_cast<int>(receipt.sessionType) << ", "
+        << receipt.date << ", "
+        << receipt.timeSlot << ", "
+        << static_cast<int> (receipt.paymentMethod) << ", "
+        << receipt.amountPaid << "\n";
 
     bookingsFile.close();
 }
 
 int loadBookings(Receipt receipts[]) {
-   const int MAX_BOOKINGS = 200;
+    const int MAX_BOOKINGS = 200;
     ifstream bookingsFile("bookings.txt");
     if (!bookingsFile.is_open()) {
         cerr << "Error: Unable to open bookings file for reading." << endl;
@@ -465,7 +476,7 @@ int loadBookings(Receipt receipts[]) {
 
         int row_count = 0;
         while (getline(ss, item, ',')) {
-            
+
             row[row_count] = item;
             row_count++;
         }
@@ -477,13 +488,13 @@ int loadBookings(Receipt receipts[]) {
         receipts[count].expert.name = row[4];
         receipts[count].serviceName = row[5];
         receipts[count].sessionType = static_cast<SessionType> (stoi(row[6]));
-        receipts[count].date =row[7];
+        receipts[count].date = row[7];
         receipts[count].timeSlot = row[8];
         receipts[count].paymentMethod = static_cast<PaymentMethod>(stoi(row[9]));
         receipts[count].amountPaid = stod(row[10]);
 
         count++;
-    } 
+    }
     bookingsFile.close();
     return count;
 }
@@ -504,7 +515,7 @@ void saveUpdatedReceipts(Receipt allReceipts[], int receiptCount) {
         file << allReceipts[i].customer.contact << ",";
         file << allReceipts[i].expert.name << ",";
         file << allReceipts[i].serviceName << ",";
-        file << allReceipts[i].sessionType<< ",";
+        file << allReceipts[i].sessionType << ",";
         file << allReceipts[i].date << ",";
         file << allReceipts[i].timeSlot << ",";
         file << allReceipts[i].paymentMethod << ",";
@@ -515,38 +526,48 @@ void saveUpdatedReceipts(Receipt allReceipts[], int receiptCount) {
 }
 
 
-void updateExpertSchedule(Receipt& receipt, Expert &expert) {
+void updateExpertSchedule(Receipt& receipt, Expert& expert) {
     int week, receiptDay, slot;
     int date = stoi(receipt.date);
     string timeSlot = trim(receipt.timeSlot);
-    if(date >= 1 && date <= 5) {
+    if (date >= 1 && date <= 5) {
         week = 0;
         receiptDay = date - 1;
-    } else if (date >= 8 && date <= 12) {
+    }
+    else if (date >= 8 && date <= 12) {
         week = 1;
         receiptDay = date - 8;
-    } else if (date >= 15 && date <= 19) {
+    }
+    else if (date >= 15 && date <= 19) {
         week = 2;
         receiptDay = date - 15;
-    } else if (date >= 22 && date <= 26) {
+    }
+    else if (date >= 22 && date <= 26) {
         week = 3;
         receiptDay = date - 22;
     }
     if (timeSlot == "9:00 - 10:00") {
         slot = 0;
-    } else if (timeSlot == "10:00 - 11:00") {
+    }
+    else if (timeSlot == "10:00 - 11:00") {
         slot = 1;
-    } else if (timeSlot == "11:00 - 12:00") {
+    }
+    else if (timeSlot == "11:00 - 12:00") {
         slot = 2;
-    } else if (timeSlot == "12:00 - 13:00") {
+    }
+    else if (timeSlot == "12:00 - 13:00") {
         slot = 3;
-    } else if (timeSlot == "13:00 - 14:00") {
+    }
+    else if (timeSlot == "13:00 - 14:00") {
         slot = 4;
-    } else if (timeSlot == "14:00 - 15:00") {
+    }
+    else if (timeSlot == "14:00 - 15:00") {
         slot = 5;
-    } else if (timeSlot == "15:00 - 16:00") {
+    }
+    else if (timeSlot == "15:00 - 16:00") {
         slot = 6;
-    } else if (timeSlot == "16:00 - 17:00") {
+    }
+    else if (timeSlot == "16:00 - 17:00") {
         slot = 7;
     }
 
@@ -556,35 +577,36 @@ void updateExpertSchedule(Receipt& receipt, Expert &expert) {
 
     expert.schedule[receiptDay][slot].isBooked = false;
     if (receipt.sessionType == TREATMENT) {
-        expert.schedule[receiptDay][slot+1].isBooked = false;
+        expert.schedule[receiptDay][slot + 1].isBooked = false;
         expert.hoursWorkedPerDay[receiptDay] -= 2;
-    } else {
+    }
+    else {
         expert.hoursWorkedPerDay[receiptDay]--;
     }
     expert.schedule[receiptDay][slot].type = CONSULTATION; // Default to consultation
     saveScheduleToFile(expert, week);
 }
 
-void processRefund(Receipt& receipt, Receipt allReceipts[], int &receiptCount) {
+void processRefund(Receipt& receipt, Receipt allReceipts[], int& receiptCount) {
     cout << "Processing refund for Booking Number: " << receipt.bookingNumber << endl;
 
     // Find index of the receipt to remove
     int receiptIndex = -1;
-    for (int i=0; i<receiptCount; i++) {
+    for (int i = 0; i < receiptCount; i++) {
         if (allReceipts[i].bookingNumber == receipt.bookingNumber) {
             receiptIndex = i;
             break;
         }
     }
 
-    if(receiptIndex == -1) {
-        cout << "Error: Booking not found." <<endl;
+    if (receiptIndex == -1) {
+        cout << "Error: Booking not found." << endl;
         return;
     }
 
     // Remove the receipt by shifting the subsequent elements
-    for (int i=receiptIndex; i<receiptCount-1; i++) {
-        allReceipts[i] = allReceipts[i+1];
+    for (int i = receiptIndex; i < receiptCount - 1; i++) {
+        allReceipts[i] = allReceipts[i + 1];
     }
 
     receiptCount--;
@@ -622,8 +644,14 @@ void displayCustomerBookings(Customer customer) {
     const string BLUE = "\033[34m";
     const string RESET = "\033[0m";
 
+    cout << "********************************************\n";
+    cout << "*           CUSTOMER BOOKING DETAILS       *\n";
+    cout << "********************************************\n\n";
     cout << "Bookings for " << customer.name << " " << customer.email << endl;
-    cout << "+--------+------------------------------+" << endl;
+    //cout << "+--------+------------------------------+" << endl;
+    cout << "\n--------------------------------------------\n";
+    cout << "Please arrive 10 minutes before your time slot.\n";
+    cout << "--------------------------------------------\n";
     Receipt customerReceipts[15]; // Store customer receipts, assuming a customer can book up to 15 times
     int bookingCount = 0;
 
@@ -634,7 +662,7 @@ void displayCustomerBookings(Customer customer) {
             hasBookings = true;
             customerReceipts[bookingCount] = allReceipts[i];
             bookingCount++;
-        
+
         }
     }
 
@@ -643,60 +671,62 @@ void displayCustomerBookings(Customer customer) {
         cout << "+-----+--------------------------------------------------------------------------+" << endl;
         cout << "| No  | Booking                                                                  |" << endl;
         cout << "+-----+--------------------------------------------------------------------------+" << endl;
-        
+
         for (int i = 0; i < bookingCount; ++i) {
             string sessionType = customerReceipts[i].sessionType == CONSULTATION ? " Consultation" : " Treatment";
             string bookingInfo = customerReceipts[i].timeSlot + " " + customerReceipts[i].date + " July 2024 with" + customerReceipts[i].expert.name + " (" + trim(customerReceipts[i].serviceName) + sessionType + ")";
-            cout << "| " << setw(2) << BLUE << "[" << i+1 << "]" << RESET << " | " << setw(72) << bookingInfo << " |" << endl;
+            cout << "| " << setw(2) << BLUE << "[" << i + 1 << "]" << RESET << " | " << setw(72) << bookingInfo << " |" << endl;
         }
         cout << "--------------------------------------------------------------------------+" << endl;
         cout << "Select a booking to view its information (how to go back from here): ";
 
         choice = getValidatedInput(1, bookingCount);
-        displayBookingInfo(customerReceipts[choice-1]);
+        displayBookingInfo(customerReceipts[choice - 1]);
 
         char refundOption;
         cout << "Enter 'R' to request a refund or enter to continue: ";
         refundOption = cin.get();
         cin.ignore(1000, '\n');
         if (tolower(refundOption) == 'r') {
-            processRefund(customerReceipts[choice-1], allReceipts, receiptCount);
+            processRefund(customerReceipts[choice - 1], allReceipts, receiptCount);
         }
-    } else {
+    }
+    else {
         cout << "No bookings found for this customer." << endl;
     }
 }
 
-void createDirectoryIfNotExists(const string &directoryName) {
+void createDirectoryIfNotExists(const string& directoryName) {
     if (ACCESS(directoryName.c_str(), 0) != 0) {
         MKDIR(directoryName.c_str());
     }
 }
 
-void saveScheduleToFile(const Expert &expert, int weekNumber) {
+void saveScheduleToFile(const Expert& expert, int weekNumber) {
     createDirectoryIfNotExists("schedules");
     string filename = "schedules/" + trim(expert.name) + "_week" + to_string(weekNumber + 1) + "_schedule.txt";
     ofstream outSchedule(filename);
 
     if (outSchedule.is_open()) {
         for (int day = 0; day < DAYS_IN_WEEK; ++day) {
-            outSchedule << "Day " << day + 1 << endl; 
+            outSchedule << "Day " << day + 1 << endl;
             outSchedule << expert.hoursWorkedPerDay[day];
 
             for (int slot = 0; slot < MAX_SLOTS_PER_DAY; ++slot) {
                 outSchedule << ' ' << expert.schedule[day][slot].isBooked;
-                outSchedule << ' ' << (expert.schedule[day][slot].type == TREATMENT ? "T" : 
-                                (expert.schedule[day][slot].type == CONSULTATION ? "C" : "U")) << ' ';
+                outSchedule << ' ' << (expert.schedule[day][slot].type == TREATMENT ? "T" :
+                    (expert.schedule[day][slot].type == CONSULTATION ? "C" : "U")) << ' ';
             }
             outSchedule << endl;
         }
-    outSchedule.close();
-    } else {
+        outSchedule.close();
+    }
+    else {
         cerr << "Error opening file for writing: " << filename << endl;
     }
 }
 
-void loadScheduleFromFile(Expert &expert, int weekNumber) {
+void loadScheduleFromFile(Expert& expert, int weekNumber) {
     string filename = "schedules/" + trim(expert.name) + "_week" + to_string(weekNumber + 1) + "_schedule.txt";
     ifstream scheduleFile(filename);
 
@@ -707,7 +737,7 @@ void loadScheduleFromFile(Expert &expert, int weekNumber) {
 
         while (getline(scheduleFile, line)) {
             if (line.find("Day") == 0) {
-                day = stoi(line.substr(4)) -1;
+                day = stoi(line.substr(4)) - 1;
                 continue;
             }
             if (day >= 0) {
@@ -718,7 +748,7 @@ void loadScheduleFromFile(Expert &expert, int weekNumber) {
                     continue;
                 }
                 expert.hoursWorkedPerDay[day] = hoursWorked;
-                
+
                 for (int slot = 0; slot < MAX_SLOTS_PER_DAY; ++slot) {
                     char isBooked, typeChar;
                     if (!(ss >> isBooked >> typeChar)) {
@@ -733,31 +763,166 @@ void loadScheduleFromFile(Expert &expert, int weekNumber) {
             }
         }
         scheduleFile.close();
-    } else {
+    }
+    else {
         cout << "No existing schedule found for " << expert.name << ". Starting with a clean schedule." << endl;
         initializeCleanSchedule(expert);
     }
 }
 
+bool handlePaymentMethod(PaymentMethod method) {
+    string otp;
+    int retryCount = 3;
+    int inputRetryCount = 3;
+
+    switch(method) {
+        case EWALLET: {
+            string phoneNumber;
+            while (inputRetryCount > 0) {
+                cout << "Enter your phone number: ";
+                cin >> phoneNumber;
+                if (isValidPhoneNumber(phoneNumber)) {
+                    otp = generateOTP();
+                    cout << "OTP for E-Wallet sent to " + phoneNumber + ": " + otp << endl;
+                    while (retryCount > 0) {
+                        if (verifyOTP(otp)) {
+                            cout << "OTP verified successfully!" << endl;
+                            cout << "Proceeding to payment..." << endl;
+                            return true;
+                            break;
+                        } else {
+                            retryCount--;
+                            if (retryCount > 0) {
+                                cout << "Invalid OTP. You have " << retryCount << " attempts remaining." << endl;
+                            } else {
+                                cout << "Failed OTP verification. Cancelling payment process." << endl;
+                                return false;
+                            }
+                        }
+                    }
+                } else {
+                    inputRetryCount--;
+                    if (inputRetryCount > 0) {
+                        cout << "Invalid phone number format! Phone number should be 01X-XXXXXXX or 01X-XXXXXXXX" << endl;
+                        cout << "You have " << inputRetryCount << " tries left." << endl;
+                    } else {
+                        cout << "Failed to provide a valid phone number. Cancelling payment process." << endl;
+                        return false;
+                    }
+                }
+            }
+            break;
+        }
+
+        case BANK_TRANSFER: {
+            string bankAccountNumber;
+            while (retryCount > 0) {
+                cout << "Enter your bank account number (10-12 digits): ";
+                cin >> bankAccountNumber;
+                if (isValidBankAccountNumber(bankAccountNumber)) {
+                    otp = generateOTP();
+                    cout << "OTP for Bank Transfer sent to your registered email: " + otp << endl;
+                    while (retryCount > 0) {
+                        if (verifyOTP(otp)) {
+                            cout << "OTP verified successfully!" << endl;
+                            cout << "Proceeding to payment..." << endl;
+                            return true;
+                        } else {
+                            retryCount--;
+                            if (retryCount > 0) {
+                                cout << "Invalid OTP. You have " << retryCount << " attempts remaining." << endl;
+                            } else {
+                                cout << "Failed OTP verification. Cancelling payment process." << endl;
+                                return false;
+                            }
+                        }
+                    }
+                } else {
+                    inputRetryCount--;
+                    if (inputRetryCount > 0) {
+                        cout << "Invalid bank account number!" << endl;  
+                        cout << "You have " << inputRetryCount << " tries left." << endl; 
+                    } else {
+                        cout << "Failed to provide a valid bank account number. Cancelling payment process." << endl;
+                        return false;
+                    }
+                }
+            }
+            break;
+        }
+
+        case CREDIT_CARD: {
+            string cardNumber, cvv;
+            while (inputRetryCount > 0) {
+                cout << "Enter your 16-digit Credit Card Number: ";
+                cin >> cardNumber;
+                cout << "Enter your 3-digit CVV: ";
+                cin >> cvv;
+                if (isValidCreditCard(cardNumber, cvv)) {
+                    otp = generateOTP();
+                    cout << "OTP for Credit Card sent to your registered email: " + otp << endl;
+
+                    while (retryCount > 0) {
+                        if (verifyOTP(otp)) {
+                            cout << "OTP verified sucessfully!" << endl;
+                            cout << "Proceeding to payment..." << endl;
+                            return true;
+                        } else {
+                            retryCount--;
+                            if (retryCount > 0) {
+                                cout << "Invalid OTP. You have " << retryCount << " attempts remaining." << endl;
+                            } else {
+                                cout << "Failed OTP verification. Cancelling payment process." << endl;
+                                return false;
+                            }
+                        }
+                    }
+                } else {
+                    inputRetryCount--;
+                    if (inputRetryCount > 0) {
+                        cout << "Invalid credit card details!" << endl;
+                        cout << "You have " << inputRetryCount << " tries left." << endl;
+                    } else {
+                        cout << "Failed to provide valid credit card details. Cancelling payment process." << endl;
+                        return false;
+                    }
+                }
+            }
+            break;
+        }
+
+        default: 
+            cout << "Invalid payment method selected!" << endl;
+            return false;
+    }
+    return false;
+}
+
 PaymentMethod selectPaymentMethod() {
     system("clear");
+    clearScreen(); //try
     cout << "Select payment method:\n";
     cout << "1. E-Wallet\n";
     cout << "2. Bank Transfer\n";
     cout << "3. Credit Card\n";
     cout << "Enter your choice (1-3): ";
     int choice;
-    choice = getValidatedInput(1,3);
+    choice = getValidatedInput(1, 3);
 
     switch (choice) {
-        case 1: return EWALLET;
-        case 2: return BANK_TRANSFER;
-        case 3: return CREDIT_CARD;
-        default: 
-            cout << "Invalid choice. Defaulting to E-Wallet." << endl;
-            return EWALLET;
-    }    
+    case 1: 
+        return EWALLET;
+    case 2: 
+        return BANK_TRANSFER;
+    case 3: 
+        return CREDIT_CARD;
+    default:
+        cout << "Invalid choice. Defaulting to E-Wallet." << endl;
+        return EWALLET;
+    }
 }
+
+
 
 int loadBookingCounter(const string& filename) {
     int counter = 0;
@@ -775,7 +940,8 @@ void saveBookingCounter(const string& filename, int counter) {
     if (bookingCounterFile.is_open()) {
         bookingCounterFile << counter;
         bookingCounterFile.close();
-    } else {
+    }
+    else {
         cerr << "Error: Unable to open file " << filename << endl;
     }
 }
@@ -797,18 +963,19 @@ void generateReceipt(const Receipt& receipt) {
     cout << left << setw(20) << "Expert:" << receipt.expert.name << endl;
     cout << left << setw(20) << "Session:" << (receipt.sessionType == TREATMENT ? "Treatment" : "Consultation") << endl;
     cout << left << setw(20) << "Service:" << receipt.serviceName << endl;
-    cout << left << setw(20) << "Date:" << trim(receipt.date) + " July 2024" << endl; 
+    cout << left << setw(20) << "Date:" << trim(receipt.date) + " July 2024" << endl;
     cout << left << setw(20) << "Time Slot:" << receipt.timeSlot << endl;
     cout << left << setw(20) << "Payment Method:" << paymentMethodToString(receipt.paymentMethod) << endl;
+    cout << "+-------------------------------------------+\n\n";
     cout << left << setw(20) << "Amount Paid:" << "RM " << fixed << setprecision(2) << receipt.amountPaid << endl;
-    cout << "\n---------------------------------------------\n";
+    cout << "\n---------------------------------------------\n\n";
     cout << "Thank you for choosing our services!\n";
     cout << "For inquiries, call us at +60-123-4567 or\n";
     cout << "email us at looksmaxxlounget@serviceprovider.com\n";
     cout << "---------------------------------------------\n";
 }
 
-void generateReceiptFile(const Receipt &receipt, const string& filename) {
+void generateReceiptFile(const Receipt& receipt, const string& filename) {
     ofstream receiptFile(filename);
 
     if (!receiptFile.is_open()) {
@@ -823,11 +990,11 @@ void generateReceiptFile(const Receipt &receipt, const string& filename) {
     receiptFile << left << setw(20) << "Expert:" << receipt.expert.name << endl;
     receiptFile << left << setw(20) << "Session:" << (receipt.sessionType == TREATMENT ? "Treatment" : "Consultation") << endl;
     receiptFile << left << setw(20) << "Service:" << receipt.serviceName << endl;
-    receiptFile << left << setw(20) << "Date:" << trim(receipt.date) + " July 2024" << endl; 
+    receiptFile << left << setw(20) << "Date:" << trim(receipt.date) + " July 2024" << endl;
     receiptFile << left << setw(20) << "Time Slot:" << receipt.timeSlot << endl;
     receiptFile << left << setw(20) << "Payment Method:" << paymentMethodToString(receipt.paymentMethod) << endl;
+    receiptFile << "+--------------------------------------------+\n\n";
     receiptFile << left << setw(20) << "Amount Paid:" << "RM " << fixed << setprecision(2) << receipt.amountPaid << endl;
-    receiptFile << "+-----------------------------+\n";
     receiptFile << "\n---------------------------------------------\n";
     receiptFile << "Thank you for choosing our services!\n";
     receiptFile << "For inquiries, call us at +60-123-4567 or\n";
@@ -837,18 +1004,18 @@ void generateReceiptFile(const Receipt &receipt, const string& filename) {
     receiptFile.close();
 }
 
-void printReceipt (const string &filename) {
-    #ifdef _WIN32
+void printReceipt(const string& filename) {
+#ifdef _WIN32
     // ShellExecute expects wide-character strings for the operation and filename
     ShellExecute(NULL, L"open", wstring(filename.begin(), filename.end()).c_str(), NULL, NULL, SW_SHOWNORMAL);
-    #else   
+#else   
     string command = "open " + filename;
     system(command.c_str());
-    #endif
+#endif
 }
 
 
-void makeBooking(Expert &expert, Service service, SessionType sessionType, Customer &customer) {
+void makeBooking(Expert& expert, Service service, SessionType sessionType, Customer& customer) {
     displayCalendar(expert);
     int chosenWeek = chooseWeek();
     loadScheduleFromFile(expert, chosenWeek);
@@ -873,34 +1040,48 @@ void makeBooking(Expert &expert, Service service, SessionType sessionType, Custo
         string startTime = to_string(START_HOUR + slot) + ":00";
         string endTime = to_string(START_HOUR + slot + duration) + ":00";
         system("clear");
+        clearScreen(); //test
+        cout << "==========================================" << endl;
+        cout << "          Booking Confirmation I          " << endl;
+        cout << "==========================================" << endl;
         cout << "Please confirm your booking details: \n";
         cout << "Service: " << service.name << endl;
         cout << "Session Type: " << (sessionType == TREATMENT ? "Treatment" : "Consultation") << endl;
         cout << "Date: " << to_string(date) << " July 2024" << endl;
         cout << "Time Slot: " << startTime << " - " << endTime << endl;
         cout << "Price: RM " << fixed << setprecision(2) << price << endl;
-        cout << "Confirm booking? (Y/N): ";
+        cout << "==========================================" << endl;
+        cout << "Confirm booking? (Y to proceed to payment/N to stop booking): ";
         char confirm;
         cin >> confirm;
 
         if (tolower(confirm) == 'y') {
-            PaymentMethod PaymentMethod = selectPaymentMethod();
-            string bookingNumber = generateBookingNumber();
-            Receipt receipt = {bookingNumber, customer, expert, sessionType, service.name, to_string(date), startTime + " - " + endTime, PaymentMethod, price};
-            generateReceipt(receipt);
+            PaymentMethod paymentMethod = selectPaymentMethod();
+            if (handlePaymentMethod(paymentMethod)) {
+                string bookingNumber = generateBookingNumber();
+                Receipt receipt = { bookingNumber, customer, expert, sessionType, service.name, to_string(date), startTime + " - " + endTime, paymentMethod, price };
+                generateReceipt(receipt);
 
-            cout << "You have successfully booked the slot on Day " << day + 1
-                << " from " << expert.schedule[day][slot].timeRange.substr(0, 5) << " to " << endTime
-                << " with " << expert.name << " for " << service.name << " (" 
-                << (sessionType == TREATMENT ? "Treatment" : "Consultation") << ")." << endl;
+                cout << "==========================================" << endl;
+                cout << "             Booking Succeed              " << endl;
+                cout << "==========================================" << endl;
+                cout << "You have successfully booked the slot on Day " << day + 1
+                    << " from " << expert.schedule[day][slot].timeRange.substr(0, 5) << " to " << endTime
+                    << " with " << expert.name << " for " << service.name << " ("
+                    << (sessionType == TREATMENT ? "Treatment" : "Consultation") << ")." << endl;
+                cout << "==========================================" << endl;
 
-            string receiptFileName = "receipt_" + bookingNumber + ".txt";
-            generateReceiptFile(receipt, receiptFileName);
-            printReceipt(receiptFileName);
+                string receiptFileName = "receipt_" + bookingNumber + ".txt";
+                generateReceiptFile(receipt, receiptFileName);
+                printReceipt(receiptFileName);
 
-            saveBooking(receipt);
-            saveScheduleToFile(expert, chosenWeek); // Save updated schedule to file
-        } else {
+                saveBooking(receipt);
+                saveScheduleToFile(expert, chosenWeek); // Save updated schedule to file
+            } else {
+                cout << "Payment verification failed. Booking canceled." << endl;
+            }
+        }
+        else {
             cout << "Booking cancelled." << endl;
         }
     }
@@ -920,7 +1101,7 @@ void customerManagement() {
         displayLogo();
         cout << "Welcome!\n";
         cout << "+--------+------------------------------+" << endl;
-        cout << "| " << setw(OPTION_WIDTH - 1)  << "Option" << " | " << left << setw(DESC_WIDTH)  <<  "Description" << " |" << endl;
+        cout << "| " << setw(OPTION_WIDTH - 1) << "Option" << " | " << left << setw(DESC_WIDTH) << "Description" << " |" << endl;
         cout << "+--------+------------------------------+" << endl;
         cout << "| " << setw(OPTION_WIDTH - 1) << "1" << " | " << setw(DESC_WIDTH) << "Sign Up (New Customer)" << " |" << endl;
         cout << "| " << setw(OPTION_WIDTH - 1) << "2" << " | " << setw(DESC_WIDTH) << "Login (Existing Customer)" << " |" << endl;
@@ -928,21 +1109,23 @@ void customerManagement() {
         cout << "+--------+------------------------------+" << endl;
         cout << "Enter your choice: ";
 
-        choice = getValidatedInput(1,3);
+        choice = getValidatedInput(1, 3);
 
-        switch(choice) {
-            case 1: 
-                customerSignUp(customers); 
-                pauseAndClear();
-                break;
-            case 2: 
-                loggedInCustomerIndex = customerLogin(customers, customerCount);
-                if (loggedInCustomerIndex != -1){
-                    customerMenu(customers[loggedInCustomerIndex]);
-                }
-                break;
-            case 3: 
-                cout << "Returning to Main Menu\n"; break;
+        switch (choice) {
+        case 1:
+            customerSignUp(customers);
+            pauseAndClear();
+            break;
+        case 2:
+            loggedInCustomerIndex = customerLogin(customers, customerCount);
+            if (loggedInCustomerIndex != -1) {
+                customerMenu(customers[loggedInCustomerIndex]);
+            }
+            break;
+        case 3:
+            cout << "Returning to Main Menu\n";
+            clearScreen();
+            break;
         }
     } while (choice != 3);
 }
@@ -967,7 +1150,48 @@ bool isValidPassword(const string& password) {
     return regex_match(password, pattern);
 }
 
-void customerSignUp(Customer customers[]){
+bool isValidPhoneNumber(const string &phoneNumber) {
+// Check for formats like 01X-XXXXXXX or 01X-XXXXXXXX
+regex phonePattern("^(01[0-9]-[0-9]{7,8})$");
+return regex_match(phoneNumber, phonePattern);
+}
+
+// Bank Account Number Validation (10-12 digits)
+bool isValidBankAccountNumber(const string &accountNumber) {
+    regex accountPattern("^[0-9]{10,12}$");  // Ensure it's a 10-12 digit number
+    return regex_match(accountNumber, accountPattern);
+}
+
+// Credit Card Validation (16 digits) and CVV (3 digits)
+bool isValidCreditCard(const string &cardNumber, const string &cvv) {
+    regex cardPattern("^[0-9]{16}$");   // 16-digit card number
+    regex cvvPattern("^[0-9]{3}$");     // 3-digit CVV number
+    return regex_match(cardNumber, cardPattern) && regex_match(cvv, cvvPattern);
+}
+
+string generateOTP() {
+    srand(time(0));
+    string otp = "";
+    for (int i = 0; i < 6; ++i) {
+        otp += to_string(rand() % 10);  // Generate a 6-digit random number
+    }
+    return otp;
+}
+
+bool verifyOTP(const string &generatedOTP) {
+    string enteredOTP;
+    cout << "\nEnter the OTP sent to you: ";
+    cin >> enteredOTP;
+    if (enteredOTP == generatedOTP) {
+        cout << "OTP verified successfully!" << endl;
+        return true;
+    } else {
+        cout << "\nInvalid OTP. Please try again." << endl;
+        return false;
+    }
+}
+
+void customerSignUp(Customer customers[]) {
     const int MAX_CUSTOMERS = 100;
     int customerCount = 0;
     if (customerCount >= MAX_CUSTOMERS) {
@@ -1008,10 +1232,10 @@ void customerSignUp(Customer customers[]){
         newCustomer.password = getPasswordInput();
         if (!isValidPassword(newCustomer.password)) {
             cout << "Invalid password format.\n"
-                 << "Password should be:\n "
-                 << "- least 8 characters long\n" 
-                 << "contain at least one uppercase letter, one lowercase letter\n"
-                 << "one digit and one special character";
+                << "Password should be:\n "
+                << "- least 8 characters long\n"
+                << "contain at least one uppercase letter, one lowercase letter\n"
+                << "one digit and one special character";
         }
     } while (!isValidPassword(newCustomer.password));
 
@@ -1032,7 +1256,7 @@ int customerLogin(Customer customers[], int customerCount) {
     cout << "Enter your password: ";
     password = getPasswordInput();
 
-    for (int i=0; i<customerCount; i++) {
+    for (int i = 0; i < customerCount; i++) {
         if (customers[i].email == email && customers[i].password == password) {
             return i;
         }
@@ -1050,18 +1274,18 @@ void saveCustomersToFile(Customer customers[], int customerCount) {
         return;
     }
 
-    for (int i=0; i<customerCount; i++) {
+    for (int i = 0; i < customerCount; i++) {
         outFile << customers[i].name << ","
-                << customers[i].contact << ","
-                << customers[i].email << ","
-                << customers[i].password << endl;
+            << customers[i].contact << ","
+            << customers[i].email << ","
+            << customers[i].password << endl;
     }
 
     outFile.close();
     cout << "Customers saved to file successfully!" << endl;
 }
 
-void loadCustomersFromFile(Customer customers[], int &customerCount) {
+void loadCustomersFromFile(Customer customers[], int& customerCount) {
     const int MAX_CUSTOMERS = 100;
     ifstream inFile("customers.txt");
 
@@ -1100,29 +1324,29 @@ void checkSchedule() {
     initializeExpert(alice, "Alice");
     initializeExpert(bob, "Bob");
     initializeExpert(carol, "Carol");
-    Expert experts[] = {alice, bob, carol};
+    Expert experts[] = { alice, bob, carol };
     cout << "Experts: " << endl;
     cout << "+-----------+--------------------------------------------+" << endl;
     cout << "| Option    | Description                                |" << endl;
     cout << "+-----------+--------------------------------------------+" << endl;
-    cout << "| [1]       | Alice                                      |" << endl; 
-    cout << "| [2]       | Bob                                        |" << endl; 
+    cout << "| [1]       | Alice                                      |" << endl;
+    cout << "| [2]       | Bob                                        |" << endl;
     cout << "| [3]       | Carol                                      |" << endl;
     cout << "+-----------+--------------------------------------------+" << endl;
 
     cout << "Check schedule for: ";
-    choice = getValidatedInput(1,3);
+    choice = getValidatedInput(1, 3);
     cout << "Enter week number (1-5): ";
-    week = getValidatedInput(1,5);
+    week = getValidatedInput(1, 5);
     --week;
 
     clearScreen();
-    loadScheduleFromFile(experts[choice-1], week);
-    displaySchedule(experts[choice-1], week);
+    loadScheduleFromFile(experts[choice - 1], week);
+    displaySchedule(experts[choice - 1], week);
 
 }
 
-void customerMenu(Customer &customer) {
+void customerMenu(Customer& customer) {
     int choice;
 
     do {
@@ -1130,7 +1354,7 @@ void customerMenu(Customer &customer) {
         displayLogo();
         cout << "\nCustomer Menu:\n";
         cout << "+--------+------------------------------+" << endl;
-        cout << "| " << setw(OPTION_WIDTH - 1)  << "Option" << " | " << left << setw(DESC_WIDTH)  <<  "Description" << " |" << endl;
+        cout << "| " << setw(OPTION_WIDTH - 1) << "Option" << " | " << left << setw(DESC_WIDTH) << "Description" << " |" << endl;
         cout << "+--------+------------------------------+" << endl;
         cout << "| " << setw(OPTION_WIDTH - 1) << "1" << " | " << setw(DESC_WIDTH) << "View Organization Details" << " |" << endl;
         cout << "| " << setw(OPTION_WIDTH - 1) << "2" << " | " << setw(DESC_WIDTH) << "View Services" << " |" << endl;
@@ -1146,13 +1370,15 @@ void customerMenu(Customer &customer) {
         choice = getValidatedInput(1, 7);
 
         switch (choice) {
-            case 1: aboutUs(); break;
-            case 2: viewServices(customer); break;
-            case 3: viewExperts(); break;
-            case 4: checkSchedule(); break;
-            case 5: viewServices(customer); break;
-            case 6: displayCustomerBookings(customer); pauseAndClearInput(); break;
-            case 7: cout << "Returning to Main Menu\n"; break;
+        case 1: aboutUs(); break;
+        case 2: viewServices(customer); break;
+        case 3: viewExperts(); break;
+        case 4: checkSchedule(); break;
+        case 5: viewServices(customer); break;
+        case 6: displayCustomerBookings(customer); pauseAndClearInput(); break;
+        case 7: cout << "Returning to Main Menu\n"; 
+            clearScreen();
+            break;
         }
 
         if (choice != 7 && choice != 6) pauseAndClear();
@@ -1169,7 +1395,8 @@ string getPasswordInput() {
                 password.pop_back();
                 cout << "\b \b";
             }
-        } else {
+        }
+        else {
             password.push_back(ch);
             cout << '*';
         }
@@ -1189,12 +1416,14 @@ string getPasswordInput() {
         if (ch == '\n' || ch == '\r') {
             cout << endl;
             break;
-        } else if (ch == 127 || ch == 8) {
+        }
+        else if (ch == 127 || ch == 8) {
             if (!password.empty()) {
                 password.pop_back();
                 cout << "\b \b";
             }
-        } else {
+        }
+        else {
             password.push_back(ch);
             cout << '*';
         }
@@ -1205,16 +1434,16 @@ string getPasswordInput() {
     return password;
 }
 
-bool login(UserType &userType, string &userName) {
+bool login(UserType& userType, string& userName) {
     clearScreen();
     displayLogo();
 
-    User alice = {"alice123", "Alice1234$", EXPERT};
-    User bob = {"bob123", "Bob1234$", EXPERT};
-    User carol = {"carol123", "Carol1234$", EXPERT};
-    User admin = {"admin123", "Admin1234$", ADMIN};
+    User alice = { "alice123", "Alice1234$", EXPERT };
+    User bob = { "bob123", "Bob1234$", EXPERT };
+    User carol = { "carol123", "Carol1234$", EXPERT };
+    User admin = { "admin123", "Admin1234$", ADMIN };
 
-    User users[] = {alice, bob, carol, admin};
+    User users[] = { alice, bob, carol, admin };
 
     string username, password;
     cout << "Enter username: ";
@@ -1223,10 +1452,10 @@ bool login(UserType &userType, string &userName) {
     cout << "Enter password: ";
     password = getPasswordInput();
 
-    for (int i=0; i<4; i++) {
+    for (int i = 0; i < 4; i++) {
         if (users[i].username == username && users[i].password == password) {
             userType = users[i].type;
-            userName = users[i].username.substr(0, users[i].username.length()-3);
+            userName = users[i].username.substr(0, users[i].username.length() - 3);
             return true;
         }
     }
@@ -1239,7 +1468,7 @@ bool login(UserType &userType, string &userName) {
 void viewExpertSchedule(const string& expertName) {
     Expert expert;
     initializeExpert(expert, expertName);
-    for (int week=0; week < 5; ++week) {
+    for (int week = 0; week < 5; ++week) {
         loadScheduleFromFile(expert, week);
         cout << "Week " << week + 1 << " Schedule for " << expertName << ":\n";
         bool hasBookings = false;
@@ -1259,7 +1488,7 @@ void viewExpertSchedule(const string& expertName) {
     }
 }
 
-void initializeCleanSchedule(Expert &expert) {
+void initializeCleanSchedule(Expert& expert) {
     for (int day = 0; day < DAYS_IN_WEEK; ++day) {
         expert.hoursWorkedPerDay[day] = 0;
         for (int slot = 0; slot < MAX_SLOTS_PER_DAY; ++slot) {
@@ -1271,7 +1500,7 @@ void initializeCleanSchedule(Expert &expert) {
 }
 
 void viewAllSchedules() {
-    string expertNames [] = {"Alice", "Bob", "Carol"};
+    string expertNames[] = { "Alice", "Bob", "Carol" };
     for (int i = 0; i < 3; i++) {
         viewExpertSchedule(expertNames[i]);
         cout << "\nPress Enter to continue...";
@@ -1288,26 +1517,26 @@ void displayCustomers(const Customer customers[], int customerCount, int booking
     cout << "| No  | Customer Name               | Email                     | Booking Count   |" << endl;
     cout << "+-----+-----------------------------+---------------------------+-----------------+" << endl;
     for (int i = 0; i < customerCount; ++i) {
-        cout << "| " << setw(2) << BLUE << "[" << i+1 << "]" << RESET << " | " << setw(27) << customers[i].name 
-             << " | " << setw(25) << customers[i].email 
-             << " | " << setw(15) << bookingCounts[i] << " |" << endl;
+        cout << "| " << setw(2) << BLUE << "[" << i + 1 << "]" << RESET << " | " << setw(27) << customers[i].name
+            << " | " << setw(25) << customers[i].email
+            << " | " << setw(15) << bookingCounts[i] << " |" << endl;
     }
     cout << "+----+-----------------------------+---------------------------+-----------------+" << endl;
     cout << "\nSelect a customer to view their information: " << endl;
     choice = getValidatedInput(1, customerCount);
 
-    displayCustomerDetails(customers[choice-1]);
+    displayCustomerDetails(customers[choice - 1]);
 }
 
 void generateSalesReport() {
     Receipt allReceipts[200];
     int receiptCount = loadBookings(allReceipts);
-    string services[] = {"Facial", "Botox and Fillers", "Manicure"};
-    string experts[] = {"Alice", "Bob", "Carol"};
+    string services[] = { "Facial", "Botox and Fillers", "Manicure" };
+    string experts[] = { "Alice", "Bob", "Carol" };
     double facialRevenue = 0, botoxRevenue = 0, manicureRevenue = 0;
     double aliceRevenue = 0, bobRevenue = 0, carolRevenue = 0;
 
-    if(receiptCount == 0) {
+    if (receiptCount == 0) {
         cout << "No bookings found. Unable to generate sales report." << endl;
         return;
     }
@@ -1315,25 +1544,29 @@ void generateSalesReport() {
     double totalRevenue = 0;
     int totalBookings = 0;
 
-    for (int i=0; i<receiptCount; ++i) {
+    for (int i = 0; i < receiptCount; ++i) {
         totalRevenue += allReceipts[i].amountPaid;
         totalBookings++;
 
         // Revenue per service
         if (trim(allReceipts[i].serviceName) == "Facial") {
             facialRevenue += allReceipts[i].amountPaid;
-        } else if (trim(allReceipts[i].serviceName) == "Botox and Fillers") {
+        }
+        else if (trim(allReceipts[i].serviceName) == "Botox and Fillers") {
             botoxRevenue += allReceipts[i].amountPaid;
-        } else if (trim(allReceipts[i].serviceName) == "Manicure") {
+        }
+        else if (trim(allReceipts[i].serviceName) == "Manicure") {
             manicureRevenue += allReceipts[i].amountPaid;
         }
 
         // Revenue per expert
         if (trim(allReceipts[i].expert.name) == "Alice") {
             aliceRevenue += allReceipts[i].amountPaid;
-        } else if (trim(allReceipts[i].expert.name) == "Bob") {
+        }
+        else if (trim(allReceipts[i].expert.name) == "Bob") {
             bobRevenue += allReceipts[i].amountPaid;
-        } else if (trim(allReceipts[i].expert.name) == "Carol") {
+        }
+        else if (trim(allReceipts[i].expert.name) == "Carol") {
             carolRevenue += allReceipts[i].amountPaid;
         }
     }
@@ -1395,7 +1628,7 @@ void sortCustomersByExpertBookings(Customer customers[], int customerCount, cons
         for (int j = i + 1; j < customerCount; ++j) {
             int bookingsA = countCustomerExpertBookings(receipts, receiptCount, customers[i].name, expertName);
             int bookingsB = countCustomerExpertBookings(receipts, receiptCount, customers[j].name, expertName);
-            
+
             if (bookingsA < bookingsB) {
                 // Swap customers[i] and customers[j]
                 Customer tempCustomer = customers[i];
@@ -1451,22 +1684,22 @@ void viewCustomers(string expertName = "") {
     int receiptCount = loadBookings(allReceipts);
     const int MAX_CUSTOMERS = 100;
 
-    if(!expertName.empty()) {
+    if (!expertName.empty()) {
         expertName[0] = toupper(expertName[0]);
     }
 
     Customer customers[MAX_CUSTOMERS];
-    int bookingCounts[MAX_CUSTOMERS] = {0};
+    int bookingCounts[MAX_CUSTOMERS] = { 0 };
     int customerCount = 0;
 
-    for (int i=0; i<receiptCount; i++) {
-        if (!expertName.empty() && trim(allReceipts[i].expert.name) != expertName){
+    for (int i = 0; i < receiptCount; i++) {
+        if (!expertName.empty() && trim(allReceipts[i].expert.name) != expertName) {
             continue;
         }
 
         //Check if the customer already exists in the array
         bool found = false;
-        for (int j=0; j<customerCount; j++) {
+        for (int j = 0; j < customerCount; j++) {
             if (customers[j].email == allReceipts[i].customer.email) {
                 bookingCounts[j]++; // Increment booking count fo rexisting customer
                 found = true;
@@ -1481,45 +1714,47 @@ void viewCustomers(string expertName = "") {
             customerCount++;
         }
     }
-        int choice;
-        clearScreen();
-        if (expertName.empty()) {
-            cout << "Empty name" << endl;
-        } else {
-            cout << expertName << endl;
-        }
-        cout << "+-----------+--------------------------------------------+" << endl;
-        cout << "| Option    | Description                                |" << endl;
-        cout << "+-----------+--------------------------------------------+" << endl;
-        cout << "| [1]       | View without sorting                       |" << endl; 
-        cout << "| [2]       | Sort by customer name                      |" << endl; 
-        cout << "| [3]       | Sort by customer bookings                  |" << endl;
-        cout << "+-----------+--------------------------------------------+" << endl;
-        cout << "\nEnter your choice: ";
-        choice = getValidatedInput(1, 3);
-
-        switch(choice) {
-            case 1:
-                displayCustomers(customers, customerCount, bookingCounts);
-                break;
-            case 2:
-                sortCustomersByName(customers, customerCount, bookingCounts);
-                displayCustomers(customers, customerCount, bookingCounts);
-                break;
-            case 3:
-                if (expertName.empty()) {
-                    sortCustomersByTotalBookings(customers, customerCount, bookingCounts);
-                } else {
-                    sortCustomersByExpertBookings(customers, customerCount, allReceipts, receiptCount, expertName, bookingCounts);
-                }
-                displayCustomers(customers, customerCount, bookingCounts);
-                break;
-
-        }
+    int choice;
+    clearScreen();
+    if (expertName.empty()) {
+        cout << "Empty name" << endl;
     }
+    else {
+        cout << expertName << endl;
+    }
+    cout << "+-----------+--------------------------------------------+" << endl;
+    cout << "| Option    | Description                                |" << endl;
+    cout << "+-----------+--------------------------------------------+" << endl;
+    cout << "| [1]       | View without sorting                       |" << endl;
+    cout << "| [2]       | Sort by customer name                      |" << endl;
+    cout << "| [3]       | Sort by customer bookings                  |" << endl;
+    cout << "+-----------+--------------------------------------------+" << endl;
+    cout << "\nEnter your choice: ";
+    choice = getValidatedInput(1, 3);
+
+    switch (choice) {
+    case 1:
+        displayCustomers(customers, customerCount, bookingCounts);
+        break;
+    case 2:
+        sortCustomersByName(customers, customerCount, bookingCounts);
+        displayCustomers(customers, customerCount, bookingCounts);
+        break;
+    case 3:
+        if (expertName.empty()) {
+            sortCustomersByTotalBookings(customers, customerCount, bookingCounts);
+        }
+        else {
+            sortCustomersByExpertBookings(customers, customerCount, allReceipts, receiptCount, expertName, bookingCounts);
+        }
+        displayCustomers(customers, customerCount, bookingCounts);
+        break;
+
+    }
+}
 
 
-void adminExpertMenu(UserType &userType, string &userName) {
+void adminExpertMenu(UserType& userType, string& userName) {
     int adminChoice, expertChoice;
 
     do {
@@ -1527,19 +1762,21 @@ void adminExpertMenu(UserType &userType, string &userName) {
         displayLogo();
         cout << "\nAdmin/Expert Menu:\n";
         cout << "+--------+------------------------------+" << endl;
-        cout << "| " << setw(OPTION_WIDTH - 1)  << "Option" << " | " << left << setw(DESC_WIDTH)  <<  "Description" << " |" << endl;
+        cout << "| " << setw(OPTION_WIDTH - 1) << "Option" << " | " << left << setw(DESC_WIDTH) << "Description" << " |" << endl;
         cout << "+--------+------------------------------+" << endl;
 
         if (userType == EXPERT) {
             cout << "| " << setw(OPTION_WIDTH - 1) << "1" << " | " << setw(DESC_WIDTH) << "View My Schedule" << " |" << endl;
-        } else if (userType == ADMIN) {
+        }
+        else if (userType == ADMIN) {
             cout << "| " << setw(OPTION_WIDTH - 1) << "1" << " | " << setw(DESC_WIDTH) << "View All Schedules" << " |" << endl;
         }
         cout << "| " << setw(OPTION_WIDTH - 1) << "2" << " | " << setw(DESC_WIDTH) << "View Customers" << " |" << endl;
         if (userType == ADMIN) {
             cout << "| " << setw(OPTION_WIDTH - 1) << "3" << " | " << setw(DESC_WIDTH) << "Generate Sales Report" << " |" << endl;
             cout << "| " << setw(OPTION_WIDTH - 1) << "4" << " | " << setw(DESC_WIDTH) << "Return to Main Menu" << " |" << endl;
-        } else if (userType == EXPERT) {
+        }
+        else if (userType == EXPERT) {
             cout << "| " << setw(OPTION_WIDTH - 1) << "3" << " | " << setw(DESC_WIDTH) << "Return to Main Menu" << " |" << endl;
         }
 
@@ -1550,29 +1787,34 @@ void adminExpertMenu(UserType &userType, string &userName) {
             expertChoice = getValidatedInput(1, 3);
 
             switch (expertChoice) {
-                case 1: 
-                    viewExpertSchedule(userName);
-                    break;
-                case 2: 
-                    viewCustomers(userName);
-                    break;
-                case 3: cout << "Returning to Main Menu\n"; break;
+            case 1:
+                viewExpertSchedule(userName);
+                break;
+            case 2:
+                viewCustomers(userName);
+                break;
+            case 3: cout << "Returning to Main Menu\n"; 
+                clearScreen();
+                break;
             }
             if (expertChoice != 3) pauseAndClear();
-        } else if (userType == ADMIN) {
+        }
+        else if (userType == ADMIN) {
             adminChoice = getValidatedInput(1, 4);
 
             switch (adminChoice) {
-                case 1: 
-                    viewAllSchedules();
-                    break;
-                case 2: 
-                    viewCustomers();
-                    break;
-                case 3: 
-                    generateSalesReport();   
-                    break;
-                case 4: cout << "Returning to Main Menu\n"; break;
+            case 1:
+                viewAllSchedules();
+                break;
+            case 2:
+                viewCustomers();
+                break;
+            case 3:
+                generateSalesReport();
+                break;
+            case 4: cout << "Returning to Main Menu\n"; 
+                clearScreen();
+                break;
             }
 
             if (adminChoice != 4) pauseAndClear();
@@ -1591,12 +1833,12 @@ int getValidatedInput(int min, int max) {
             // Ignore the rest of the invalid input until the newline
             cin.ignore(1000, '\n');
             cout << "Invalid input. Please enter a valid integer: ";
-        } 
+        }
         else if (input < min || input > max) {
             // Ignore any extra characters from valid input
             cin.ignore(1000, '\n');
             cout << "Out of range. Please enter a number between " << min << " and " << max << ": ";
-        } 
+        }
         else {
             // Return the value
             return input;
@@ -1608,20 +1850,40 @@ int getValidatedInput(int min, int max) {
 void aboutUs() {
     clearScreen();
     displayLogo();
+    cout << "===============================" << endl;
+    cout << "        Looksmaxx Lounge        " << endl;
+    cout << "===============================" << endl;
     cout << "\nOrganization Details:\n";
-    cout << "Name: Looksmaxx Lounge\n";
-    cout << "Address: Jalan Genting Kelang, Setapak, 53300 Kuala Lumpur\n";
-    cout << "Phone: 03-12345678\n";
-    cout << "Email: looksmaxxlounge@enquiries.com\n";
+    cout << "Name:       Looksmaxx Lounge\n";
+    cout << "Address:    Jalan Genting Kelang, Setapak,\n";
+    cout << "            53300 Kuala Lumpur\n";
+    cout << "Phone:      03-12345678\n";
+    cout << "Email:      looksmaxxlounge@enquiries.com\n";
+    cout << "\nDescription:\n";
+    cout << "   Looksmaxx Lounge is a premium beauty and wellness hub\n";
+    cout << "   designed to help individuals enhance their natural features\n";
+    cout << "   and boost their confidence. Specializing in a range of\n";
+    cout << "   personalized beauty services—from skincare treatments and\n";
+    cout << "   cosmetic enhancements to hairstyling and body contouring.\n";
+    cout << "   Looksmaxx Lounge caters to clients seeking expert guidance\n";
+    cout << "   and high-quality results. With a team of experienced\n";
+    cout << "   professionals and state-of-the-art technology, the lounge\n";
+    cout << "   provides a relaxing, luxurious environment where clients\n";
+    cout << "   can achieve their aesthetic goals in a welcoming atmosphere.\n";
+    cout << "===============================\n";
 }
 
-void serviceDesc(Service service, Customer &customer) {
+void serviceDesc(Service service, Customer& customer) {
     clearScreen();
     displayLogo();
+    cout << "===============================\n";
+    cout << "         Service Details        \n";
+    cout << "===============================\n";
     cout << "\n" << service.name << "\n";
     cout << "Description: " << service.description << "\n";
     cout << "Price: RM" << fixed << setprecision(2) << service.price << "\n";
     cout << "Duration: " << 2 << " hours\n";
+    cout << "===============================\n";
 
     cout << "Press Y to book or N to return to main menu: ";
     char choice;
@@ -1631,7 +1893,7 @@ void serviceDesc(Service service, Customer &customer) {
         initializeExpert(alice, "Alice");
         initializeExpert(bob, "Bob");
         initializeExpert(carol, "Carol");
-        Expert experts[] = {alice, bob, carol};
+        Expert experts[] = { alice, bob, carol };
 
         cout << "\n---------------------------\n";
         cout << "     Select Your Expert\n";
@@ -1653,36 +1915,36 @@ void serviceDesc(Service service, Customer &customer) {
         cout << "  [1] Full Treatment - 2 hours of deep facial care\n";
         cout << "  [2] Consultation   - 1 hour personalized consultation\n";
         cout << "\nEnter your choice (1-2): ";
-        
+
         int sessionChoice;
-        sessionChoice = getValidatedInput(1,2);
+        sessionChoice = getValidatedInput(1, 2);
 
         SessionType sessionType;
         switch (sessionChoice) {
-            case 1: sessionType = TREATMENT; break;
-            case 2: sessionType = CONSULTATION; break;
-            default:
-                cout << "Invalid choice. Exiting.";
-                return;
+        case 1: sessionType = TREATMENT; break;
+        case 2: sessionType = CONSULTATION; break;
+        default:
+            cout << "Invalid choice. Exiting.";
+            return;
         }
         makeBooking(selectedExpert, service, sessionType, customer);
     }
 
 }
 
-void viewServices(Customer &customer) {
+void viewServices(Customer& customer) {
     clearScreen();
     displayLogo();
 
-    Service facial = { "Facial", "A rejuvenating facial treatment.", 150.00};
-    Service botox = { "Botox and Fillers", "Cosmetic injections for wrinkle treatment.", 250.00};
-    Service manicure = {"Manicure", "A relaxing manicure sesion.", 100.00};
-    
-    Service services[3] = {facial, botox, manicure};
+    Service facial = { "Facial", "A rejuvenating facial treatment.", 150.00 };
+    Service botox = { "Botox and Fillers", "Cosmetic injections for wrinkle treatment.", 250.00 };
+    Service manicure = { "Manicure", "A relaxing manicure sesion.", 100.00 };
+
+    Service services[3] = { facial, botox, manicure };
     int choice, service_count = 1;
     cout << "\nServices\n";
     cout << "+--------+------------------------------+" << endl;
-    cout << "| " << setw(OPTION_WIDTH - 1)  << "Option" << " | " << left << setw(DESC_WIDTH)  <<  "Service Name" << " |" << endl;
+    cout << "| " << setw(OPTION_WIDTH - 1) << "Option" << " | " << left << setw(DESC_WIDTH) << "Service Name" << " |" << endl;
     cout << "+--------+------------------------------+" << endl;
     cout << "| " << setw(OPTION_WIDTH - 1) << "1" << " | " << setw(DESC_WIDTH) << "Facial" << " |" << endl;
     cout << "| " << setw(OPTION_WIDTH - 1) << "2" << " | " << setw(DESC_WIDTH) << "Botox and Fillers" << " |" << endl;
@@ -1696,30 +1958,32 @@ void viewServices(Customer &customer) {
     serviceDesc(services[choice - 1], customer);
 }
 
-void displayExpertDetails(Expert &expert) {
+void displayExpertDetails(Expert& expert) {
     if (expert.name == "Alice") {
         cout << "+--------------------------------------------------------+" << endl;
         cout << "|                    Expert Details                      |" << endl;
         cout << "+--------------------------------------------------------+" << endl;
-        cout << "| Name: Alice                                            |" << endl; 
-        cout << "| Years of Experience: 5                                 |" << endl; 
-        cout << "| Rating: 4.9/5                                          |" << endl; 
+        cout << "| Name: Alice                                            |" << endl;
+        cout << "| Years of Experience: 5                                 |" << endl;
+        cout << "| Rating: 4.9/5                                          |" << endl;
         cout << "+--------------------------------------------------------+" << endl;
-    } else if (expert.name == "Bob") {
-        cout << "+--------------------------------------------------------+" << endl;
-        cout << "|                    Expert Details                      |" << endl;
-        cout << "+--------------------------------------------------------+" << endl;
-        cout << "| Name: Bob                                            |" << endl; 
-        cout << "| Years of Experience: 2                                 |" << endl; 
-        cout << "| Rating: 4.7/5                                          |" << endl; 
-        cout << "+--------------------------------------------------------+" << endl;
-    } else if (expert.name == "Carol") {
+    }
+    else if (expert.name == "Bob") {
         cout << "+--------------------------------------------------------+" << endl;
         cout << "|                    Expert Details                      |" << endl;
         cout << "+--------------------------------------------------------+" << endl;
-        cout << "| Name: Carol                                            |" << endl; 
-        cout << "| Years of Experience: 8                                 |" << endl; 
-        cout << "| Rating: 4.8/5                                          |" << endl; 
+        cout << "| Name: Bob                                            |" << endl;
+        cout << "| Years of Experience: 2                                 |" << endl;
+        cout << "| Rating: 4.7/5                                          |" << endl;
+        cout << "+--------------------------------------------------------+" << endl;
+    }
+    else if (expert.name == "Carol") {
+        cout << "+--------------------------------------------------------+" << endl;
+        cout << "|                    Expert Details                      |" << endl;
+        cout << "+--------------------------------------------------------+" << endl;
+        cout << "| Name: Carol                                            |" << endl;
+        cout << "| Years of Experience: 8                                 |" << endl;
+        cout << "| Rating: 4.8/5                                          |" << endl;
         cout << "+--------------------------------------------------------+" << endl;
     }
     char viewSchedule;
@@ -1741,30 +2005,30 @@ void viewExperts() {
     initializeExpert(alice, "Alice");
     initializeExpert(bob, "Bob");
     initializeExpert(carol, "Carol");
-    Expert experts[] = {alice, bob, carol};
+    Expert experts[] = { alice, bob, carol };
 
     cout << "Experts: " << endl;
     cout << "+-----------+--------------------------------------------+" << endl;
     cout << "| Option    | Description                                |" << endl;
     cout << "+-----------+--------------------------------------------+" << endl;
-    cout << "| [1]       | Alice                                      |" << endl; 
-    cout << "| [2]       | Bob                                        |" << endl; 
+    cout << "| [1]       | Alice                                      |" << endl;
+    cout << "| [2]       | Bob                                        |" << endl;
     cout << "| [3]       | Carol                                      |" << endl;
     cout << "+-----------+--------------------------------------------+" << endl;
     cout << "Select an expert to view their details: ";
-    choice = getValidatedInput(1,3);
+    choice = getValidatedInput(1, 3);
 
-    switch(choice) {
-        case 1:
-            displayExpertDetails(alice); break;
-        case 2: 
-            displayExpertDetails(bob); break;
-        case 3:
-            displayExpertDetails(carol); break;
-        default:
-            cout << "No expert found." << endl;
-        
-    }    
+    switch (choice) {
+    case 1:
+        displayExpertDetails(alice); break;
+    case 2:
+        displayExpertDetails(bob); break;
+    case 3:
+        displayExpertDetails(carol); break;
+    default:
+        cout << "No expert found." << endl;
+
+    }
 
 }
 
