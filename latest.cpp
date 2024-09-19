@@ -103,7 +103,7 @@ void customerManagement();
 void loadCustomersFromFile(Customer[], int&);
 void saveCustomersToFile(Customer[], int);
 void customerMenu(Customer&);
-void customerSignUp(Customer[]);
+void customerSignUp(Customer[], int &customerCount);
 int customerLogin(Customer[], int);
 bool isValidName(const string&);
 bool isValidEmail(const string&);
@@ -645,10 +645,9 @@ void displayCustomerBookings(Customer customer) {
     cout << "*           CUSTOMER BOOKING DETAILS       *\n";
     cout << "********************************************\n\n";
     cout << "Bookings for " << customer.name << " " << customer.email << endl;
-    //cout << "+--------+------------------------------+" << endl;
-    cout << "\n--------------------------------------------\n";
+    cout << "\n----------------------------------------------\n";
     cout << "Please arrive 10 minutes before your time slot.\n";
-    cout << "--------------------------------------------\n";
+    cout << "----------------------------------------------\n";
     Receipt customerReceipts[30]; // Store customer receipts, assuming a customer can book up to 30 times
     int bookingCount = 0;
 
@@ -665,16 +664,16 @@ void displayCustomerBookings(Customer customer) {
 
     if (hasBookings) {
         int choice;
-        cout << "+-----+--------------------------------------------------------------------------+" << endl;
-        cout << "| No  | Booking                                                                  |" << endl;
-        cout << "+-----+--------------------------------------------------------------------------+" << endl;
+        cout << "+------+--------------------------------------------------------------------------+" << endl;
+        cout << "|  No  | Booking                                                                  |" << endl;
+        cout << "+------+--------------------------------------------------------------------------+" << endl;
 
         for (int i = 0; i < bookingCount; ++i) {
             string sessionType = customerReceipts[i].sessionType == CONSULTATION ? " Consultation" : " Treatment";
             string bookingInfo = customerReceipts[i].timeSlot + " " + customerReceipts[i].date + " July 2024 with" + customerReceipts[i].expert.name + " (" + trim(customerReceipts[i].serviceName) + sessionType + ")";
-            cout << "| " << setw(2) << BLUE << "[" << i + 1 << "]" << RESET << " | " << setw(72) << bookingInfo << " |" << endl;
+            cout << "| " << setw(3) << BLUE << "[" << i + 1 << "]" << RESET << " | " << setw(72) << bookingInfo << " |" << endl;
         }
-        cout << "--------------------------------------------------------------------------+" << endl;
+        cout << "+------+--------------------------------------------------------------------------+" << endl;
         cout << "Select a booking to view its information: ";
 
         choice = getValidatedInput(1, bookingCount);
@@ -1090,8 +1089,6 @@ void customerManagement() {
     int loggedInCustomerIndex = -1;
     clearScreen();
     loadCustomersFromFile(customers, customerCount);
-    cout << customers[0].email << endl;
-    cout << customers[1].email << endl;
 
 
     do {
@@ -1110,7 +1107,7 @@ void customerManagement() {
 
         switch (choice) {
         case 1:
-            customerSignUp(customers);
+            customerSignUp(customers, customerCount);
             pauseAndClear();
             break;
         case 2:
@@ -1183,9 +1180,8 @@ bool verifyOTP(const string &generatedOTP) {
     }
 }
 
-void customerSignUp(Customer customers[]) {
+void customerSignUp(Customer customers[], int &customerCount) {
     const int MAX_CUSTOMERS = 100;
-    int customerCount = 0;
     if (customerCount >= MAX_CUSTOMERS) {
         cout << "Maximum number of customers reached!" << endl;
         return;
@@ -1210,13 +1206,24 @@ void customerSignUp(Customer customers[]) {
         }
     } while (!isValidPhoneNumber(newCustomer.contact));
 
+    bool isUniqueEmail;
+
     do {
         cout << "Enter your email: ";
         getline(cin, newCustomer.email);
+        isUniqueEmail = true;
+        for (int i=0; i<customerCount; i++) {
+            if (trim(customers[i].email) == trim(newCustomer.email)) {
+                cout << "\nThis email is already registered. Please try a different email.\n";
+                isUniqueEmail = false;
+                break;
+            }
+        }
         if (!isValidEmail(newCustomer.email)) {
             cout << "\nInvalid email format. Please try again.\n ";
+            isUniqueEmail = false;
         }
-    } while (!isValidEmail(newCustomer.email));
+    } while (!isValidEmail(newCustomer.email) || !isUniqueEmail);
 
 
     do {
@@ -1229,7 +1236,8 @@ void customerSignUp(Customer customers[]) {
                 << "contain at least one uppercase letter, one lowercase letter\n"
                 << "one digit and one special character";
         }
-    } while (!isValidPassword(newCustomer.password));
+    }
+     while (!isValidPassword(newCustomer.password));
 
     customers[customerCount] = newCustomer;
     customerCount++;
@@ -1259,7 +1267,7 @@ int customerLogin(Customer customers[], int customerCount) {
 }
 
 void saveCustomersToFile(Customer customers[], int customerCount) {
-    ofstream outFile("customers.txt", ios::app);
+    ofstream outFile("customers.txt", ios::out);
 
     if (!outFile) {
         cerr << "Error opening file for writing." << endl;
@@ -2012,9 +2020,7 @@ void viewExperts() {
         displayExpertDetails(carol); break;
     default:
         cout << "No expert found." << endl;
-
     }
-
 }
 
 void clearScreen() {
