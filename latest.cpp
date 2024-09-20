@@ -554,6 +554,10 @@ void updateExpertSchedule(Receipt& receipt, Expert& expert) {
         week = 3;
         receiptDay = date - 22;
     }
+    else if (date >= 29 && date <= 31) {
+        week = 4;
+        receiptDay = date - 29;
+    }
 
     // Determine the time slot
     if (timeSlot == "9:00 - 10:00") {
