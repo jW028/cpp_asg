@@ -30,6 +30,7 @@
 #define DESC_WIDTH 28
 #define RED "\033[31m"
 #define GREEN "\033[32m"
+#define YELLOW "\033[33m"
 #define BLUE "\033[34m"
 #define RESET "\033[0m"
 
@@ -45,7 +46,8 @@ struct Customer {
 enum PaymentMethod {
     EWALLET,
     BANK_TRANSFER,
-    CREDIT_CARD
+    CREDIT_CARD, 
+    CANCELLED
 };
 
 enum  SessionType { TREATMENT, CONSULTATION, UNAVAILABLE };
@@ -343,6 +345,9 @@ int chooseWeek() {
     int choice;
     cout << "Enter week number (1-5): ";
     choice = getValidatedInput(1, 5);
+    if (choice == -999) {
+        return -1;
+    }
 
     if (choice < 1 || choice > 5) {
         cout << RED << "Invalid choice. Please select a valid week.\n" << RESET;
@@ -634,7 +639,7 @@ void displayCustomerBookings(Customer customer) {
     cout << "********************************************\n";
     cout << "*           CUSTOMER BOOKING DETAILS       *\n";
     cout << "********************************************\n\n";
-    cout << "Bookings for " << customer.name << " " << customer.email << endl;
+    cout << "Bookings for " << customer.name << endl;
     cout << "\n----------------------------------------------\n";
     cout << "Please arrive 10 minutes before your time slot.\n";
     cout << "----------------------------------------------\n";
@@ -654,19 +659,22 @@ void displayCustomerBookings(Customer customer) {
 
     if (hasBookings) {
         int choice;
-        cout << "+------+--------------------------------------------------------------------------+" << endl;
-        cout << "|  No  | Booking                                                                  |" << endl;
-        cout << "+------+--------------------------------------------------------------------------+" << endl;
+        cout << "+------+---------------------------------------------------------------------------+" << endl;
+        cout << "|  No  | Booking                                                                   |" << endl;
+        cout << "+------+---------------------------------------------------------------------------+" << endl;
 
         for (int i = 0; i < bookingCount; ++i) {
             string sessionType = customerReceipts[i].sessionType == CONSULTATION ? " Consultation" : " Treatment";
             string bookingInfo = customerReceipts[i].timeSlot + " " + customerReceipts[i].date + " July 2024 with" + customerReceipts[i].expert.name + " (" + trim(customerReceipts[i].serviceName) + sessionType + ")";
-            cout << "| " << setw(2) << BLUE << "[" << i + 1 << "]" << RESET << " | " << setw(72) << bookingInfo << " |" << endl;
+            cout << "| " << BLUE << "[" << setw(2) << i + 1 << "]" << RESET << "  | " << setw(72) << left << bookingInfo << " |" << endl;
         }
-        cout << "+------+--------------------------------------------------------------------------+" << endl;
+        cout << "+------+---------------------------------------------------------------------------+" << endl;
         cout << "Select a booking to view its information: ";
 
         choice = getValidatedInput(1, bookingCount);
+        if (choice == -999) {
+            return; 
+        }
         displayBookingInfo(customerReceipts[choice - 1]);
 
         char refundOption;
@@ -891,9 +899,12 @@ PaymentMethod selectPaymentMethod() {
     cout << "1. E-Wallet\n";
     cout << "2. Bank Transfer\n";
     cout << "3. Credit Card\n";
-    cout << "Enter your choice (1-3): ";
+    cout << "Enter your choice (1-3 or -999 to go back): ";
     int choice;
     choice = getValidatedInput(1, 3);
+    if (choice == -999) {
+        return CANCELLED;
+    }
 
     switch (choice) {
     case 1: 
@@ -1016,6 +1027,9 @@ void printReceipt(const string& filename) {
 void makeBooking(Expert& expert, Service service, SessionType sessionType, Customer& customer) {
     displayCalendar(expert);
     int chosenWeek = chooseWeek();
+    if (chosenWeek == -1) {
+        return;
+    }
     loadScheduleFromFile(expert, chosenWeek);
     displaySchedule(expert, chosenWeek);
     double price = sessionType == TREATMENT ? service.price : 60.0;
@@ -1055,6 +1069,9 @@ void makeBooking(Expert& expert, Service service, SessionType sessionType, Custo
 
         if (tolower(confirm) == 'y') {
             PaymentMethod paymentMethod = selectPaymentMethod();
+            if (paymentMethod == CANCELLED) {
+                return;
+            }
             if (handlePaymentMethod(paymentMethod)) {
                 string bookingNumber = generateBookingNumber();
                 Receipt receipt = { bookingNumber, customer, expert, sessionType, service.name, to_string(date), startTime + " - " + endTime, paymentMethod, price };
@@ -1195,14 +1212,21 @@ void customerSignUp(Customer customers[], int &customerCount) {
         cout << "Enter your name: ";
         cin.ignore();
         getline(cin, newCustomer.name);
+        if (trim(newCustomer.name) == "-999") {
+            return;
+        }
         if (!isValidName(newCustomer.name)) {
             cout << RED <<  "\nName can only contain letters. Please try again.\n" << RESET;
+            cin.clear();
         }
     } while (!isValidName(newCustomer.name));
 
     do {
         cout << "Enter your contact number (including -): ";
         getline(cin, newCustomer.contact);
+        if (trim(newCustomer.contact) == "-999") {
+            return;
+        }
         if (!isValidPhoneNumber(newCustomer.contact)) {
             cout << RED <<  "\nInvalid contact number format.\nExample of contact: 012-3456789\nPlease try again.\n" << RESET;
         }
@@ -1213,6 +1237,9 @@ void customerSignUp(Customer customers[], int &customerCount) {
     do {
         cout << "Enter your email: ";
         getline(cin, newCustomer.email);
+        if (trim(newCustomer.email) == "-999") {
+            return;
+        }
         isUniqueEmail = true;
         for (int i=0; i<customerCount; i++) {
             if (trim(customers[i].email) == trim(newCustomer.email)) {
@@ -1231,7 +1258,10 @@ void customerSignUp(Customer customers[], int &customerCount) {
     do {
         cout << "Enter your password (min 8 characters, must include uppercase, lowercase, digit, and special character):\n";
         newCustomer.password = getPasswordInput();
-        if (!isValidPassword(newCustomer.password)) {
+        if (trim(newCustomer.password) == "-999") {
+            return;
+        }
+        if (!isValidPassword(trim(newCustomer.password))) {
             cout << RED << "Invalid password format.\n"
                 << "Password should be:\n "
                 << "- least 8 characters long\n"
@@ -1239,7 +1269,7 @@ void customerSignUp(Customer customers[], int &customerCount) {
                 << "- one digit and one special character" << RESET << endl;
         }
     }
-     while (!isValidPassword(newCustomer.password));
+     while (!isValidPassword(trim(newCustomer.password)));
 
     customers[customerCount] = newCustomer;
     customerCount++;
@@ -1254,9 +1284,15 @@ int customerLogin(Customer customers[], int customerCount) {
     cout << "Enter your email: ";
     cin.ignore(1000, '\n');
     getline(cin, email);
+    if (trim(email) == "-999") {
+        return -1;
+    }
 
     cout << "Enter your password: ";
     password = getPasswordInput();
+    if (trim(password) == "-999") {
+        return -1;
+    }
 
     for (int i = 0; i < customerCount; i++) {
         if (customers[i].email == email && customers[i].password == password) {
@@ -1337,8 +1373,14 @@ void checkSchedule() {
 
     cout << "Check schedule for: ";
     choice = getValidatedInput(1, 3);
+    if (choice == -999) {
+        return;
+    }
     cout << "Enter week number (1-5): ";
     week = getValidatedInput(1, 5);
+    if (week == -999) {
+        return;
+    }
     --week;
 
     clearScreen();
@@ -1376,7 +1418,7 @@ void customerMenu(Customer& customer) {
         case 3: viewExperts(); break;
         case 4: checkSchedule(); break;
         case 5: viewServices(customer); break;
-        case 6: displayCustomerBookings(customer); pauseAndClearInput(); break;
+        case 6: displayCustomerBookings(customer); pauseAndClear(); break;
         case 7: cout << "Returning to Main Menu\n"; 
             clearScreen();
             break;
@@ -1449,9 +1491,19 @@ bool adminExpertLogin(UserType& userType, string& userName) {
     string username, password;
     cout << "Enter username: ";
     cin >> username;
+    if (trim(username) == "-999") {
+        cout << YELLOW << "Returning to previous menu." << RESET << endl;
+        pauseAndClearInput();
+        return false;
+    }
     cin.ignore(1000, '\n');
     cout << "Enter password: ";
     password = getPasswordInput();
+    if(trim(password) == "-999") {
+        cout << YELLOW << "Returning to previous menu." << RESET << endl;
+        pauseAndClearInput();
+        return false;
+    }
 
     for (int i = 0; i < 4; i++) {
         if (users[i].username == username && users[i].password == password) {
@@ -1523,6 +1575,9 @@ void displayCustomers(const Customer customers[], int customerCount, int booking
     cout << "+----+-----------------------------+---------------------------+-----------------+" << endl;
     cout << "\nSelect a customer to view their information: " << endl;
     choice = getValidatedInput(1, customerCount);
+    if (choice == -999) {
+        return;
+    }
 
     displayCustomerDetails(customers[choice - 1]);
 }
@@ -1722,8 +1777,11 @@ void viewCustomers(string expertName = "") {
     cout << "| [2]       | Sort by customer name                      |" << endl;
     cout << "| [3]       | Sort by customer bookings                  |" << endl;
     cout << "+-----------+--------------------------------------------+" << endl;
-    cout << "\nEnter your choice: ";
+    cout << "\nEnter your choice (-999 to go back): ";
     choice = getValidatedInput(1, 3);
+    if (choice == -999) {
+        return;
+    }
 
     switch (choice) {
     case 1:
@@ -1815,7 +1873,7 @@ void adminExpertMenu(UserType& userType, string& userName) {
 }
 
 int getValidatedInput(int min, int max) {
-    int input;
+    int input, sentinel = -999;
     while (true) {
         cin >> input;
 
@@ -1825,6 +1883,9 @@ int getValidatedInput(int min, int max) {
             // Ignore the rest of the invalid input until the newline
             cin.ignore(1000, '\n');
             cout << RED << "Invalid input. Please enter a valid integer: " << RESET;
+        } else if (input == sentinel) {
+            cout << YELLOW << "Returning to the previous menu." << RESET << endl;
+            return sentinel;
         }
         else if (input < min || input > max) {
             // Ignore any extra characters from valid input
@@ -1894,9 +1955,12 @@ void serviceDesc(Service service, Customer& customer) {
         cout << "  [1]  Alice\n";
         cout << "  [2]  Bob\n";
         cout << "  [3]  Carol\n";
-        cout << "\nPlease select an expert by entering the number (1-3): ";
+        cout << "\nPlease select an expert by entering the number (1-3 or -999 to go back): ";
         int expertChoice;
-        cin >> expertChoice;
+        expertChoice = getValidatedInput(1, 3);
+        if (expertChoice == -999) {
+            return;
+        }
 
         Expert& selectedExpert = experts[expertChoice - 1];
 
@@ -1942,9 +2006,12 @@ void viewServices(Customer& customer) {
     cout << "| " << setw(OPTION_WIDTH - 1) << "3" << " | " << setw(DESC_WIDTH) << "Manicure" << " |" << endl;
 
     cout << "+--------+------------------------------+" << endl;
-    cout << "Enter your choice: ";
+    cout << "Enter your choice (-999 to go back): ";
 
     choice = getValidatedInput(1, 3);
+    if (choice == -999) {
+        return;
+    }
 
     serviceDesc(services[choice - 1], customer);
 }
@@ -2007,6 +2074,10 @@ void viewExperts() {
     cout << "+-----------+--------------------------------------------+" << endl;
     cout << "Select an expert to view their details: ";
     choice = getValidatedInput(1, 3);
+
+    if (choice == -999) {
+        return;
+    }
 
     switch (choice) {
     case 1:
