@@ -28,6 +28,10 @@
 #define MAX_SLOTS_PER_DAY 8 // Total slots available (8 hours)
 #define OPTION_WIDTH 7
 #define DESC_WIDTH 28
+#define RED "\033[31m"
+#define GREEN "\033[32m"
+#define BLUE "\033[34m"
+#define RESET "\033[0m"
 
 using namespace std;
 
@@ -154,13 +158,10 @@ void viewAllShedules();
 void aboutUs();
 void viewCustomers(string);
 int getValidatedInput(int min, int max);
-bool login(UserType&, string&);
+bool adminExpertLogin(UserType&, string&);
 string getPasswordInput();
-void logout();
 void serviceDesc(Service, Customer&);
 void viewServices(Customer&);
-void botoxDesc();
-void manicureDesc();
 void viewExperts();
 void checkSchedule();
 void viewBookedSchedule();
@@ -186,7 +187,7 @@ int main() {
             customerManagement();
             break;
         case 2:
-            if (login(userType, userName)) {
+            if (adminExpertLogin(userType, userName)) {
                 adminExpertMenu(userType, userName);
             }
             break;
@@ -245,13 +246,9 @@ string paymentMethodToString(PaymentMethod paymentMethod) {
 }
 
 void displaySchedule(const Expert& expert, int week) {
-    const string RED = "\033[31m";
-    const string GREEN = "\033[32m";
-    const string BLUE = "\033[34m";
-    const string RESET = "\033[0m";
 
     if (week < 0 || week >= 5) {
-        cout << "Invalid week number. Please select a week from 1 to 5." << endl;
+        cout << RED << "Invalid week number. Please select a week from 1 to 5." << RESET << endl;
         return;
     }
 
@@ -348,17 +345,13 @@ int chooseWeek() {
     choice = getValidatedInput(1, 5);
 
     if (choice < 1 || choice > 5) {
-        cout << "Invalid choice. Please select a valid week.\n";
+        cout << RED << "Invalid choice. Please select a valid week.\n" << RESET;
         return chooseWeek();
     }
     return --choice;
 }
 
 void displayCalendar(Expert& expert) {
-    const string RED = "\033[31m";    // Booked slots
-    const string GREEN = "\033[32m";  // Open slots
-    const string BLUE = "\033[34m";   // Labels
-    const string RESET = "\033[0m";   // Reset formatting
 
     const int DAYWIDTH = 12;  // Width for each day's display
     const int SLOTWIDTH = 12;
@@ -427,7 +420,7 @@ int* selectTimeSlot(const Expert& expert, int chosenWeek, SessionType sessionTyp
         return result;
     }
 
-    cout << "Invalid selection, slot(s) already booked, or exceeds daily work limit." << endl;
+    cout << RED << "Invalid selection, slot(s) already booked, or exceeds daily work limit." << RESET << endl;
     result[0] = -1;
     result[1] = -1;
     return result;
@@ -436,7 +429,7 @@ int* selectTimeSlot(const Expert& expert, int chosenWeek, SessionType sessionTyp
 void saveBooking(const Receipt& receipt) {
     ofstream bookingsFile("bookings.txt", ios::app);
     if (!bookingsFile.is_open()) {
-        cerr << "Error: Unable to open bookings file for writing." << endl;
+        cerr << RED << "Error: Unable to open bookings file for writing." << RESET << endl;
         return;
     }
 
@@ -459,7 +452,7 @@ int loadBookings(Receipt receipts[]) {
     const int MAX_BOOKINGS = 200;
     ifstream bookingsFile("bookings.txt");
     if (!bookingsFile.is_open()) {
-        cerr << "Error: Unable to open bookings file for reading." << endl;
+        cerr << RED << "Error: Unable to open bookings file for reading." << RESET << endl;
         return 0;
     }
     string line;
@@ -502,11 +495,11 @@ void saveUpdatedReceipts(Receipt allReceipts[], int receiptCount) {
     ofstream file("bookings.txt"); // Replace with actual file name
 
     if (!file) {
-        cout << "Error opening file for saving receipts." << endl;
+        cout << RED <<  "Error opening file for saving receipts." << RESET << endl;
         return;
     }
 
-    // Write updated receipt data back to the file
+    // Write update << d receipt data back to the file
     for (int i = 0; i < receiptCount; i++) {
         file << allReceipts[i].bookingNumber << ",";
         file << allReceipts[i].customer.name << ",";
@@ -599,7 +592,7 @@ void processRefund(Receipt& receipt, Receipt allReceipts[], int& receiptCount) {
     }
 
     if (receiptIndex == -1) {
-        cout << "Error: Booking not found." << endl;
+        cout << RED << "Error: Booking not found." << RESET << endl;
         return;
     }
 
@@ -638,9 +631,6 @@ void displayCustomerBookings(Customer customer) {
     Receipt allReceipts[150];
     int receiptCount = loadBookings(allReceipts);
 
-    const string BLUE = "\033[34m";
-    const string RESET = "\033[0m";
-
     cout << "********************************************\n";
     cout << "*           CUSTOMER BOOKING DETAILS       *\n";
     cout << "********************************************\n\n";
@@ -671,7 +661,7 @@ void displayCustomerBookings(Customer customer) {
         for (int i = 0; i < bookingCount; ++i) {
             string sessionType = customerReceipts[i].sessionType == CONSULTATION ? " Consultation" : " Treatment";
             string bookingInfo = customerReceipts[i].timeSlot + " " + customerReceipts[i].date + " July 2024 with" + customerReceipts[i].expert.name + " (" + trim(customerReceipts[i].serviceName) + sessionType + ")";
-            cout << "| " << setw(3) << BLUE << "[" << i + 1 << "]" << RESET << " | " << setw(72) << bookingInfo << " |" << endl;
+            cout << "| " << setw(2) << BLUE << "[" << i + 1 << "]" << RESET << " | " << setw(72) << bookingInfo << " |" << endl;
         }
         cout << "+------+--------------------------------------------------------------------------+" << endl;
         cout << "Select a booking to view its information: ";
@@ -688,7 +678,7 @@ void displayCustomerBookings(Customer customer) {
         }
     }
     else {
-        cout << "No bookings found for this customer." << endl;
+        cout << RED << "No bookings found for this customer."  << RESET << endl;
     }
 }
 
@@ -718,7 +708,7 @@ void saveScheduleToFile(const Expert& expert, int weekNumber) {
         outSchedule.close();
     }
     else {
-        cerr << "Error opening file for writing: " << filename << endl;
+        cerr << RED << "Error opening file for writing: " << filename  << RESET << endl;
     }
 }
 
@@ -740,7 +730,7 @@ void loadScheduleFromFile(Expert& expert, int weekNumber) {
                 stringstream ss(line);
                 int hoursWorked;
                 if (!(ss >> hoursWorked)) {
-                    cerr << "Error parsing hoursWorked: " << line << endl;
+                    cerr << RED << "Error parsing hoursWorked: " << line << RESET << endl;
                     continue;
                 }
                 expert.hoursWorkedPerDay[day] = hoursWorked;
@@ -748,7 +738,7 @@ void loadScheduleFromFile(Expert& expert, int weekNumber) {
                 for (int slot = 0; slot < MAX_SLOTS_PER_DAY; ++slot) {
                     char isBooked, typeChar;
                     if (!(ss >> isBooked >> typeChar)) {
-                        cerr << "Error reading slot data for Week " << week + 1 << " Day " << day + 1 << " from line: " << line << endl;
+                        cerr << RED << "Error reading slot data for Week " << week + 1 << " Day " << day + 1 << " from line: " << line << RESET << endl;
                         break;
                     }
                     expert.schedule[day][slot].isBooked = (isBooked == '1');
@@ -789,9 +779,9 @@ bool handlePaymentMethod(PaymentMethod method) {
                         } else {
                             retryCount--;
                             if (retryCount > 0) {
-                                cout << "Invalid OTP. You have " << retryCount << " attempts remaining." << endl;
+                                cout << RED << "Invalid OTP. You have " << retryCount << " attempts remaining." << RESET << endl;
                             } else {
-                                cout << "Failed OTP verification. Cancelling payment process." << endl;
+                                cout << RED << "Failed OTP verification. Cancelling payment process." << RESET << endl;
                                 return false;
                             }
                         }
@@ -799,10 +789,10 @@ bool handlePaymentMethod(PaymentMethod method) {
                 } else {
                     inputRetryCount--;
                     if (inputRetryCount > 0) {
-                        cout << "Invalid phone number format! Phone number should be 01X-XXXXXXX or 01X-XXXXXXXX" << endl;
-                        cout << "You have " << inputRetryCount << " tries left." << endl;
+                        cout << RED << "Invalid phone number format! Phone number should be 01X-XXXXXXX or 01X-XXXXXXXX" << endl;
+                        cout << "You have " << inputRetryCount << " tries left." << RESET << endl;
                     } else {
-                        cout << "Failed to provide a valid phone number. Cancelling payment process." << endl;
+                        cout << RED << "Failed to provide a valid phone number. Cancelling payment process." << RESET << endl;
                         return false;
                     }
                 }
@@ -826,9 +816,9 @@ bool handlePaymentMethod(PaymentMethod method) {
                         } else {
                             retryCount--;
                             if (retryCount > 0) {
-                                cout << "Invalid OTP. You have " << retryCount << " attempts remaining." << endl;
+                                cout << RED << "Invalid OTP. You have " << retryCount << " attempts remaining." << RESET << endl;
                             } else {
-                                cout << "Failed OTP verification. Cancelling payment process." << endl;
+                                cout << RED <<  "Failed OTP verification. Cancelling payment process." << RESET << endl;
                                 return false;
                             }
                         }
@@ -836,10 +826,10 @@ bool handlePaymentMethod(PaymentMethod method) {
                 } else {
                     inputRetryCount--;
                     if (inputRetryCount > 0) {
-                        cout << "Invalid bank account number!" << endl;  
-                        cout << "You have " << inputRetryCount << " tries left." << endl; 
+                        cout << RED << "Invalid bank account number!" << endl;  
+                        cout << "You have " << inputRetryCount << " tries left." << RESET << endl; 
                     } else {
-                        cout << "Failed to provide a valid bank account number. Cancelling payment process." << endl;
+                        cout << RED << "Failed to provide a valid bank account number. Cancelling payment process." << RESET << endl;
                         return false;
                     }
                 }
@@ -866,9 +856,9 @@ bool handlePaymentMethod(PaymentMethod method) {
                         } else {
                             retryCount--;
                             if (retryCount > 0) {
-                                cout << "Invalid OTP. You have " << retryCount << " attempts remaining." << endl;
+                                cout << RED << "Invalid OTP. You have " << retryCount << " attempts remaining." << RESET << endl;
                             } else {
-                                cout << "Failed OTP verification. Cancelling payment process." << endl;
+                                cout << RED << "Failed OTP verification. Cancelling payment process." << RESET << endl;
                                 return false;
                             }
                         }
@@ -876,10 +866,10 @@ bool handlePaymentMethod(PaymentMethod method) {
                 } else {
                     inputRetryCount--;
                     if (inputRetryCount > 0) {
-                        cout << "Invalid credit card details!" << endl;
-                        cout << "You have " << inputRetryCount << " tries left." << endl;
+                        cout << RED << "Invalid credit card details!" << endl;
+                        cout << "You have " << inputRetryCount << " tries left." << RESET << endl;
                     } else {
-                        cout << "Failed to provide valid credit card details. Cancelling payment process." << endl;
+                        cout << RED << "Failed to provide valid credit card details. Cancelling payment process." << RESET << endl;
                         return false;
                     }
                 }
@@ -888,7 +878,7 @@ bool handlePaymentMethod(PaymentMethod method) {
         }
 
         default: 
-            cout << "Invalid payment method selected!" << endl;
+            cout << RED << "Invalid payment method selected!" << RESET << endl;
             return false;
     }
     return false;
@@ -913,7 +903,7 @@ PaymentMethod selectPaymentMethod() {
     case 3: 
         return CREDIT_CARD;
     default:
-        cout << "Invalid choice. Defaulting to E-Wallet." << endl;
+        cout << RED << "Invalid choice. Defaulting to E-Wallet." << RESET << endl;
         return EWALLET;
     }
 }
@@ -938,7 +928,7 @@ void saveBookingCounter(const string& filename, int counter) {
         bookingCounterFile.close();
     }
     else {
-        cerr << "Error: Unable to open file " << filename << endl;
+        cerr << RED << "Error: Unable to open file " << filename << RESET << endl;
     }
 }
 
@@ -951,6 +941,12 @@ string generateBookingNumber() {
 }
 
 void generateReceipt(const Receipt& receipt) {
+    cout << "   __             _                                       __                              " << endl;
+    cout << "  / /  ___   ___ | | _____ _ __ ___   __ ___  ____  __   / /  ___  _   _ _ __   __ _  ___ " << endl;
+    cout << " / /  / _ \\ / _ \\| |/ / __| '_ ` _ \\ / _` \\ \\/ /\\ \\/ /  / /  / _ \\| | | | '_ \\ / _` |/ _ \\" << endl;
+    cout << "/ /__| (_) | (_) |   <\\__ \\ | | | | | (_| |>  <  >  <  / /__| (_) | |_| | | | | (_| |  __/" << endl;
+    cout << "\\____/\\___/ \\___/|_|\\_\\___/_| |_| |_|\\__,_/_/\\_\\/_/\\_\\ \\____/\\___/ \\__,_|_| |_|\\__, |\\___|" << endl;
+    cout << "                                                                               |___/      " << endl;
     cout << "*********************************************\n";
     cout << "*               SERVICE RECEIPT             *\n";
     cout << "*********************************************\n\n";
@@ -975,9 +971,15 @@ void generateReceiptFile(const Receipt& receipt, const string& filename) {
     ofstream receiptFile(filename);
 
     if (!receiptFile.is_open()) {
-        cerr << "Error: Unable to open file " << filename << endl;
+        cerr << RED << "Error: Unable to open file " << filename << RESET << endl;
         return;
     }
+    receiptFile << "   __             _                                       __                              " << endl;
+    receiptFile << "  / /  ___   ___ | | _____ _ __ ___   __ ___  ____  __   / /  ___  _   _ _ __   __ _  ___ " << endl;
+    receiptFile << " / /  / _ \\ / _ \\| |/ / __| '_ ` _ \\ / _` \\ \\/ /\\ \\/ /  / /  / _ \\| | | | '_ \\ / _` |/ _ \\" << endl;
+    receiptFile << "/ /__| (_) | (_) |   <\\__ \\ | | | | | (_| |>  <  >  <  / /__| (_) | |_| | | | | (_| |  __/" << endl;
+    receiptFile << "\\____/\\___/ \\___/|_|\\_\\___/_| |_| |_|\\__,_/_/\\_\\/_/\\_\\ \\____/\\___/ \\__,_|_| |_|\\__, |\\___|" << endl;
+    receiptFile << "                                                                               |___/      " << endl;
     receiptFile << "*********************************************\n";
     receiptFile << "*               SERVICE RECEIPT             *\n";
     receiptFile << "*********************************************\n\n";
@@ -1074,7 +1076,7 @@ void makeBooking(Expert& expert, Service service, SessionType sessionType, Custo
                 saveBooking(receipt);
                 saveScheduleToFile(expert, chosenWeek); // Save updated schedule to file
             } else {
-                cout << "Payment verification failed. Booking canceled." << endl;
+                cout << RED << "Payment verification failed. Booking canceled." << RESET << endl;
             }
         }
         else {
@@ -1126,36 +1128,36 @@ void customerManagement() {
 
 bool isValidName(const string& name) {
     const regex pattern("^[A-Za-z]+(?: [A-Za-z]+)*$");
-    return regex_match(name, pattern);
+    return regex_match(trim(name), pattern);
 }
 
 bool isValidPhoneNumber(const string &phoneNumber) {
 // Check for formats like 01X-XXXXXXX or 01X-XXXXXXXX
 regex phonePattern("^(01[0-9]-[0-9]{7,8})$");
-return regex_match(phoneNumber, phonePattern);
+return regex_match(trim(phoneNumber), phonePattern);
 }
 
 bool isValidEmail(const string& email) {
     const regex pattern("(\\w+)(\\.|_)?(\\w*)@(\\w+)(\\.(\\w+))+");
-    return regex_match(email, pattern);
+    return regex_match(trim(email), pattern);
 }
 
 bool isValidPassword(const string& password) {
     const regex pattern("(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*])[a-zA-Z\\d!@#$%^&*]{8,}");
-    return regex_match(password, pattern);
+    return regex_match(trim(password), pattern);
 }
 
 // Bank Account Number Validation (10-12 digits)
 bool isValidBankAccountNumber(const string &accountNumber) {
     regex accountPattern("^[0-9]{10,12}$");  // Ensure it's a 10-12 digit number
-    return regex_match(accountNumber, accountPattern);
+    return regex_match(trim(accountNumber), accountPattern);
 }
 
 // Credit Card Validation (16 digits) and CVV (3 digits)
 bool isValidCreditCard(const string &cardNumber, const string &cvv) {
     regex cardPattern("^[0-9]{16}$");   // 16-digit card number
     regex cvvPattern("^[0-9]{3}$");     // 3-digit CVV number
-    return regex_match(cardNumber, cardPattern) && regex_match(cvv, cvvPattern);
+    return regex_match(trim(cardNumber), cardPattern) && regex_match(trim(cvv), cvvPattern);
 }
 
 string generateOTP() {
@@ -1175,7 +1177,7 @@ bool verifyOTP(const string &generatedOTP) {
         cout << "OTP verified successfully!" << endl;
         return true;
     } else {
-        cout << "\nInvalid OTP. Please try again." << endl;
+        cout << RED << "\nInvalid OTP. Please try again." << RESET << endl;
         return false;
     }
 }
@@ -1183,7 +1185,7 @@ bool verifyOTP(const string &generatedOTP) {
 void customerSignUp(Customer customers[], int &customerCount) {
     const int MAX_CUSTOMERS = 100;
     if (customerCount >= MAX_CUSTOMERS) {
-        cout << "Maximum number of customers reached!" << endl;
+        cout << RED << "Maximum number of customers reached!" << RESET << endl;
         return;
     }
     Customer newCustomer;
@@ -1194,15 +1196,15 @@ void customerSignUp(Customer customers[], int &customerCount) {
         cin.ignore();
         getline(cin, newCustomer.name);
         if (!isValidName(newCustomer.name)) {
-            cout << "\nInvalid name. Please try again.\n";
+            cout << RED <<  "\nName can only contain letters. Please try again.\n" << RESET;
         }
     } while (!isValidName(newCustomer.name));
 
     do {
-        cout << "Enter your contact number: ";
+        cout << "Enter your contact number (including -): ";
         getline(cin, newCustomer.contact);
         if (!isValidPhoneNumber(newCustomer.contact)) {
-            cout << "\nInvalid contact number format.\nExample of contact: 123-456-7890\nPlease try again.\n";
+            cout << RED <<  "\nInvalid contact number format.\nExample of contact: 012-3456789\nPlease try again.\n" << RESET;
         }
     } while (!isValidPhoneNumber(newCustomer.contact));
 
@@ -1214,27 +1216,27 @@ void customerSignUp(Customer customers[], int &customerCount) {
         isUniqueEmail = true;
         for (int i=0; i<customerCount; i++) {
             if (trim(customers[i].email) == trim(newCustomer.email)) {
-                cout << "\nThis email is already registered. Please try a different email.\n";
+                cout << RED << "\nThis email is already registered. Please try a different email.\n" << RESET;
                 isUniqueEmail = false;
                 break;
             }
         }
         if (!isValidEmail(newCustomer.email)) {
-            cout << "\nInvalid email format. Please try again.\n ";
+            cout << RED << "\nInvalid email format. Please try again.\n " << RESET;
             isUniqueEmail = false;
         }
     } while (!isValidEmail(newCustomer.email) || !isUniqueEmail);
 
 
     do {
-        cout << "Enter your password (min 8 characters, must include uppercase, lowercase, digit, and special character): ";
+        cout << "Enter your password (min 8 characters, must include uppercase, lowercase, digit, and special character):\n";
         newCustomer.password = getPasswordInput();
         if (!isValidPassword(newCustomer.password)) {
-            cout << "Invalid password format.\n"
+            cout << RED << "Invalid password format.\n"
                 << "Password should be:\n "
                 << "- least 8 characters long\n"
-                << "contain at least one uppercase letter, one lowercase letter\n"
-                << "one digit and one special character";
+                << "- contain at least one uppercase letter, one lowercase letter\n"
+                << "- one digit and one special character" << RESET << endl;
         }
     }
      while (!isValidPassword(newCustomer.password));
@@ -1261,7 +1263,7 @@ int customerLogin(Customer customers[], int customerCount) {
             return i;
         }
     }
-    cout << "Login failed. Please try again.\n";
+    cout << RED << "Login failed. Please try again.\n" << RESET;
     pauseAndClearInput();
     return -1;
 }
@@ -1270,7 +1272,7 @@ void saveCustomersToFile(Customer customers[], int customerCount) {
     ofstream outFile("customers.txt", ios::out);
 
     if (!outFile) {
-        cerr << "Error opening file for writing." << endl;
+        cerr << RED << "Error opening file for writing." << RESET << endl;
         return;
     }
 
@@ -1282,7 +1284,7 @@ void saveCustomersToFile(Customer customers[], int customerCount) {
     }
 
     outFile.close();
-    cout << "Customers saved to file successfully!" << endl;
+    cout << "Customer saved to file successfully!" << endl;
 }
 
 void loadCustomersFromFile(Customer customers[], int& customerCount) {
@@ -1315,7 +1317,6 @@ void loadCustomersFromFile(Customer customers[], int& customerCount) {
     }
 
     inFile.close();
-    cout << "Customers loaded from file successfully!" << endl;
 }
 
 void checkSchedule() {
@@ -1434,7 +1435,7 @@ string getPasswordInput() {
     return password;
 }
 
-bool login(UserType& userType, string& userName) {
+bool adminExpertLogin(UserType& userType, string& userName) {
     clearScreen();
     displayLogo();
 
@@ -1460,7 +1461,7 @@ bool login(UserType& userType, string& userName) {
         }
     }
 
-    cout << "Login failed. Please try again.\n";
+    cout << RED << "Login failed. Please try again.\n" << RESET;
     pauseAndClearInput();
     return false;
 }
@@ -1510,8 +1511,6 @@ void viewAllSchedules() {
 }
 
 void displayCustomers(const Customer customers[], int customerCount, int bookingCounts[]) {
-    const string BLUE = "\033[34m";
-    const string RESET = "\033[0m";
     int choice;
     cout << "+-----+-----------------------------+---------------------------+-----------------+" << endl;
     cout << "| No  | Customer Name               | Email                     | Booking Count   |" << endl;
@@ -1537,7 +1536,7 @@ void generateSalesReport() {
     double aliceRevenue = 0, bobRevenue = 0, carolRevenue = 0;
 
     if (receiptCount == 0) {
-        cout << "No bookings found. Unable to generate sales report." << endl;
+        cout << RED << "No bookings found. Unable to generate sales report." << RESET << endl;
         return;
     }
 
@@ -1825,12 +1824,12 @@ int getValidatedInput(int min, int max) {
             cin.clear();
             // Ignore the rest of the invalid input until the newline
             cin.ignore(1000, '\n');
-            cout << "Invalid input. Please enter a valid integer: ";
+            cout << RED << "Invalid input. Please enter a valid integer: " << RESET;
         }
         else if (input < min || input > max) {
             // Ignore any extra characters from valid input
             cin.ignore(1000, '\n');
-            cout << "Out of range. Please enter a number between " << min << " and " << max << ": ";
+            cout << RED <<  "Out of range. Please enter a number between " << min << " and " << max << ": " << RESET;
         }
         else {
             // Return the value
@@ -1878,7 +1877,7 @@ void serviceDesc(Service service, Customer& customer) {
     cout << "Duration: " << 2 << " hours\n";
     cout << "===============================\n";
 
-    cout << "Press Y to book or N to return to main menu: ";
+    cout << "Press Y to book or any other key to return to main menu: ";
     char choice;
     cin >> choice;
     if (choice == 'Y' || choice == 'y') {
@@ -1917,12 +1916,11 @@ void serviceDesc(Service service, Customer& customer) {
         case 1: sessionType = TREATMENT; break;
         case 2: sessionType = CONSULTATION; break;
         default:
-            cout << "Invalid choice. Exiting.";
+            cout << RED <<  "Invalid choice. Exiting." << RESET;
             return;
         }
         makeBooking(selectedExpert, service, sessionType, customer);
     }
-
 }
 
 void viewServices(Customer& customer) {
@@ -1980,7 +1978,6 @@ void displayExpertDetails(Expert& expert) {
         cout << "+--------------------------------------------------------+" << endl;
     }
     char viewSchedule;
-    int choice;
     cout << "Do you want to view this expert's schedule? (Y or N): " << endl;
     cin >> viewSchedule;
 
