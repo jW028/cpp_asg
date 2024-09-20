@@ -533,9 +533,11 @@ void saveUpdatedReceipts(Receipt allReceipts[], int receiptCount) {
 
 
 void updateExpertSchedule(Receipt& receipt, Expert& expert) {
-    int week, receiptDay, slot;
-    int date = stoi(receipt.date);
+    int week = -1, receiptDay = -1, slot = -1; // Initialize week, receiptDay, and slot to -1
+    int date = stoi(trim(receipt.date));
     string timeSlot = trim(receipt.timeSlot);
+
+    // Determine the week and day based on the date
     if (date >= 1 && date <= 5) {
         week = 0;
         receiptDay = date - 1;
@@ -552,6 +554,8 @@ void updateExpertSchedule(Receipt& receipt, Expert& expert) {
         week = 3;
         receiptDay = date - 22;
     }
+
+    // Determine the time slot
     if (timeSlot == "9:00 - 10:00") {
         slot = 0;
     }
@@ -577,21 +581,33 @@ void updateExpertSchedule(Receipt& receipt, Expert& expert) {
         slot = 7;
     }
 
-    cout << week << " " << date << endl;
+    // Ensure the slot is valid
+    if (week != -1 && receiptDay != -1 && slot != -1) {
 
-    loadScheduleFromFile(expert, week);
+        // Load the schedule for the expert
+        loadScheduleFromFile(expert, week);
 
-    expert.schedule[receiptDay][slot].isBooked = false;
-    if (receipt.sessionType == TREATMENT) {
-        expert.schedule[receiptDay][slot + 1].isBooked = false;
-        expert.hoursWorkedPerDay[receiptDay] -= 2;
+        // Update the schedule
+        expert.schedule[receiptDay][slot].isBooked = false;
+        if (receipt.sessionType == TREATMENT) {
+            expert.schedule[receiptDay][slot + 1].isBooked = false;
+            expert.hoursWorkedPerDay[receiptDay] -= 2;
+        }
+        else {
+            expert.hoursWorkedPerDay[receiptDay]--;
+        }
+
+        // Reset the slot type to consultation
+        expert.schedule[receiptDay][slot].type = CONSULTATION; // Default to consultation
+
+        // Save the updated schedule back to the file
+        saveScheduleToFile(expert, week);
     }
     else {
-        expert.hoursWorkedPerDay[receiptDay]--;
+        cout << "Error: Invalid week, day, or time slot." << endl;
     }
-    expert.schedule[receiptDay][slot].type = CONSULTATION; // Default to consultation
-    saveScheduleToFile(expert, week);
 }
+
 
 void processRefund(Receipt& receipt, Receipt allReceipts[], int& receiptCount) {
     cout << "Processing refund for Booking Number: " << receipt.bookingNumber << endl;
@@ -1439,10 +1455,11 @@ void customerMenu(Customer& customer) {
 
         switch (choice) {
         case 1: aboutUs(); break;
-        case 2: viewServices(customer); break;
+        case 2:
+        case 5:
+         viewServices(customer); break;
         case 3: viewExperts(); break;
         case 4: checkSchedule(); break;
-        case 5: viewServices(customer); break;
         case 6: displayCustomerBookings(customer); pauseAndClear(); break;
         case 7: cout << "Returning to Main Menu\n"; 
             clearScreen();
@@ -1599,7 +1616,7 @@ void displayCustomers(const Customer customers[], int customerCount, int booking
             << " | " << setw(25) << customers[i].email
             << " | " << setw(15) << bookingCounts[i] << " |" << endl;
     }
-    cout << "+----+-----------------------------+---------------------------+-----------------+" << endl;
+    cout << "+----+------------------------------+---------------------------+-----------------+" << endl;
     cout << "\nSelect a customer to view their information: " << endl;
     choice = getValidatedInput(1, customerCount);
     if (choice == -999) {
@@ -2059,7 +2076,7 @@ void displayExpertDetails(Expert& expert) {
         cout << "+--------------------------------------------------------+" << endl;
         cout << "|                    Expert Details                      |" << endl;
         cout << "+--------------------------------------------------------+" << endl;
-        cout << "| Name: Bob                                            |" << endl;
+        cout << "| Name: Bob                                              |" << endl;
         cout << "| Years of Experience: 2                                 |" << endl;
         cout << "| Rating: 4.7/5                                          |" << endl;
         cout << "+--------------------------------------------------------+" << endl;
