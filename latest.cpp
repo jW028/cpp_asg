@@ -343,7 +343,7 @@ string trim(const string& str) {
 
 int chooseWeek() {
     int choice;
-    cout << "Enter week number (1-5): ";
+    cout << "Enter week number (1-5, -999 to go back): ";
     choice = getValidatedInput(1, 5);
     if (choice == -999) {
         return -1;
@@ -401,7 +401,7 @@ int* selectTimeSlot(const Expert& expert, int chosenWeek, SessionType sessionTyp
     static int result[2];
     int selectedDay;
     if (chosenWeek != 4) {
-        cout << "Select a day (1-5 for Mon-Fri): ";
+        cout << "Select a day (1-5 for Mon-Fri, -999 to go back): ";
         selectedDay = getValidatedInput(1, 5);
         if (selectedDay == -999) {
             return nullptr;
@@ -409,7 +409,7 @@ int* selectTimeSlot(const Expert& expert, int chosenWeek, SessionType sessionTyp
         selectedDay -= 1;
     }
     else {
-        cout << "Select a day (1-3 for Mon-Wed): ";
+        cout << "Select a day (1-3 for Mon-Wed, -999 to go back): ";
         selectedDay = getValidatedInput(1, 3);
         if (selectedDay == -999) {
             return nullptr;
@@ -417,7 +417,7 @@ int* selectTimeSlot(const Expert& expert, int chosenWeek, SessionType sessionTyp
         selectedDay -= 1;
     }
 
-    cout << "Select a starting time slot (1-" << MAX_SLOTS_PER_DAY << "): ";
+    cout << "Select a starting time slot (1-" << MAX_SLOTS_PER_DAY << ", -999 to go back): ";
     int selectedSlot;
     selectedSlot = getValidatedInput(1, 8);
     if (selectedSlot == -999) {
@@ -903,7 +903,6 @@ bool handlePaymentMethod(PaymentMethod method) {
 }
 
 PaymentMethod selectPaymentMethod() {
-    system("clear");
     clearScreen(); //try
     cout << "Select payment method:\n";
     cout << "1. E-Wallet\n";
@@ -1079,8 +1078,7 @@ void makeBooking(Expert& expert, Service service, SessionType sessionType, Custo
 
         string startTime = to_string(START_HOUR + slot) + ":00";
         string endTime = to_string(START_HOUR + slot + duration) + ":00";
-        system("clear");
-        clearScreen(); //test
+        clearScreen(); 
         cout << "==========================================" << endl;
         cout << "          Booking Confirmation I          " << endl;
         cout << "==========================================" << endl;
@@ -1132,7 +1130,7 @@ void makeBooking(Expert& expert, Service service, SessionType sessionType, Custo
 
 void customerManagement() {
     Customer customers[100];
-    int choice, customerCount;
+    int choice, customerCount = 0;
     int loggedInCustomerIndex = -1;
     clearScreen();
     loadCustomersFromFile(customers, customerCount);
@@ -1255,7 +1253,7 @@ void customerSignUp(Customer customers[], int &customerCount) {
         if (trim(newCustomer.contact) == "-999") {
             return;
         }
-        if (!isValidPhoneNumber(newCustomer.contact)) {
+        if(!isValidPhoneNumber(newCustomer.contact)) {
             cout << RED <<  "\nInvalid contact number format.\nExample of contact: 012-3456789\nPlease try again.\n" << RESET;
         }
     } while (!isValidPhoneNumber(newCustomer.contact));
@@ -1303,7 +1301,6 @@ void customerSignUp(Customer customers[], int &customerCount) {
     customerCount++;
 
     saveCustomersToFile(customers, customerCount);
-
 }
 
 int customerLogin(Customer customers[], int customerCount) {
@@ -1349,7 +1346,7 @@ void saveCustomersToFile(Customer customers[], int customerCount) {
 
     outFile.close();
     cout << "Customer saved to file successfully!" << endl;
-}
+}   
 
 void loadCustomersFromFile(Customer customers[], int& customerCount) {
     const int MAX_CUSTOMERS = 100;
@@ -1964,8 +1961,7 @@ void serviceDesc(Service service, Customer& customer) {
     cout << "===============================\n";
     cout << "\n" << service.name << "\n";
     cout << "Description: " << service.description << "\n";
-    cout << "Price: RM" << fixed << setprecision(2) << service.price << "\n";
-    cout << "Duration: " << 2 << " hours\n";
+    cout << "Treatment Price: RM" << fixed << setprecision(2) << service.price << "\n";
     cout << "===============================\n";
 
     cout << "Press Y to book or any other key to return to main menu: ";
@@ -1998,12 +1994,15 @@ void serviceDesc(Service service, Customer& customer) {
         cout << "     Choose Session Type\n";
         cout << "---------------------------\n";
         cout << "Please choose the type of session you’d like:\n";
-        cout << "  [1] Full Treatment - 2 hours of deep facial care\n";
+        cout << "  [1] Full Treatment - 2 hours of treatment\n";
         cout << "  [2] Consultation   - 1 hour personalized consultation\n";
-        cout << "\nEnter your choice (1-2): ";
+        cout << "\nEnter your choice (1-2, -999 to go back): ";
 
         int sessionChoice;
         sessionChoice = getValidatedInput(1, 2);
+        if (sessionChoice == -999) {
+            return;
+        }
 
         SessionType sessionType;
         switch (sessionChoice) {
