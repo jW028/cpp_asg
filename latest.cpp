@@ -403,17 +403,26 @@ int* selectTimeSlot(const Expert& expert, int chosenWeek, SessionType sessionTyp
     if (chosenWeek != 4) {
         cout << "Select a day (1-5 for Mon-Fri): ";
         selectedDay = getValidatedInput(1, 5);
+        if (selectedDay == -999) {
+            return nullptr;
+        }
         selectedDay -= 1;
     }
     else {
         cout << "Select a day (1-3 for Mon-Wed): ";
         selectedDay = getValidatedInput(1, 3);
+        if (selectedDay == -999) {
+            return nullptr;
+        }
         selectedDay -= 1;
     }
 
     cout << "Select a starting time slot (1-" << MAX_SLOTS_PER_DAY << "): ";
     int selectedSlot;
     selectedSlot = getValidatedInput(1, 8);
+    if (selectedSlot == -999) {
+        return nullptr;
+    }
     selectedSlot -= 1;
 
     if (chosenWeek >= 0 && chosenWeek < 5 &&
@@ -669,7 +678,7 @@ void displayCustomerBookings(Customer customer) {
             cout << "| " << BLUE << "[" << setw(2) << i + 1 << "]" << RESET << "  | " << setw(72) << left << bookingInfo << " |" << endl;
         }
         cout << "+------+---------------------------------------------------------------------------+" << endl;
-        cout << "Select a booking to view its information: ";
+        cout << "Select a booking to view its information (-999 to go back): ";
 
         choice = getValidatedInput(1, bookingCount);
         if (choice == -999) {
@@ -679,10 +688,11 @@ void displayCustomerBookings(Customer customer) {
 
         char refundOption;
         cout << "Enter 'R' to request a refund or enter to continue: ";
+        cin.ignore();
         refundOption = cin.get();
         cin.ignore(1000, '\n');
         if (tolower(refundOption) == 'r') {
-            processRefund(customerReceipts[choice - 1], allReceipts, receiptCount);
+             processRefund(customerReceipts[choice - 1], allReceipts, receiptCount);
         }
     }
     else {
@@ -958,25 +968,32 @@ void generateReceipt(const Receipt& receipt) {
     cout << "/ /__| (_) | (_) |   <\\__ \\ | | | | | (_| |>  <  >  <  / /__| (_) | |_| | | | | (_| |  __/" << endl;
     cout << "\\____/\\___/ \\___/|_|\\_\\___/_| |_| |_|\\__,_/_/\\_\\/_/\\_\\ \\____/\\___/ \\__,_|_| |_|\\__, |\\___|" << endl;
     cout << "                                                                               |___/      " << endl;
-    cout << "*********************************************\n";
-    cout << "*               SERVICE RECEIPT             *\n";
-    cout << "*********************************************\n\n";
-    cout << left << setw(20) << "Booking Number:" << receipt.bookingNumber << endl;
-    cout << left << setw(20) << "Customer Name:" << receipt.customer.name << endl;
-    cout << left << setw(20) << "Expert:" << receipt.expert.name << endl;
-    cout << left << setw(20) << "Session:" << (receipt.sessionType == TREATMENT ? "Treatment" : "Consultation") << endl;
-    cout << left << setw(20) << "Service:" << receipt.serviceName << endl;
-    cout << left << setw(20) << "Date:" << trim(receipt.date) + " July 2024" << endl;
-    cout << left << setw(20) << "Time Slot:" << receipt.timeSlot << endl;
-    cout << left << setw(20) << "Payment Method:" << paymentMethodToString(receipt.paymentMethod) << endl;
-    cout << "+-------------------------------------------+\n\n";
-    cout << left << setw(20) << "Amount Paid:" << "RM " << fixed << setprecision(2) << receipt.amountPaid << endl;
-    cout << "\n---------------------------------------------\n\n";
-    cout << "Thank you for choosing our services!\n";
-    cout << "For inquiries, call us at +60-123-4567 or\n";
-    cout << "email us at looksmaxxlounget@serviceprovider.com\n";
-    cout << "---------------------------------------------\n";
+    cout << "                                  LOOKSMAXXLOUNGE @LOOKSMAXXAREA" << endl;
+    cout << "                                         Lot 23, 2nd Floor,\n";
+    cout << "                                     Plaza Crystal, Jalan Ampang,\n";
+    cout << "                                         50450 Kuala Lumpur,\n";
+    cout << "                                 Wilayah Persekutuan Kuala Lumpur,\n";
+    cout << "                                             Malaysia\n";     
+    cout << "                           *********************************************\n";
+    cout << "                           *               SERVICE RECEIPT             *\n";
+    cout << "                           *********************************************\n\n";
+    cout << "                           Booking Number:" << receipt.bookingNumber << endl;
+    cout << "                           Customer Name:" << receipt.customer.name << endl;
+    cout << "                           Expert:" << receipt.expert.name << endl;
+    cout << "                           Session:" << (receipt.sessionType == TREATMENT ? "Treatment" : "Consultation") << endl;
+    cout << "                           Service:" << receipt.serviceName << endl;
+    cout << "                           Date:" << trim(receipt.date) + " July 2024" << endl;
+    cout << "                           Time Slot:" << receipt.timeSlot << endl;
+    cout << "                           Payment Method:" << paymentMethodToString(receipt.paymentMethod) << endl;
+    cout << "                           +-------------------------------------------+\n\n";
+    cout << "                           Amount Paid:" << "RM " << fixed << setprecision(2) << receipt.amountPaid << endl;
+    cout << "                           ---------------------------------------------\n\n";
+    cout << "                           Thank you for choosing our services!\n";
+    cout << "                           For inquiries, call us at +60-123-4567 or\n";
+    cout << "                           email us at looksmaxxlounget@serviceprovider.com\n";
+    cout << "                           ---------------------------------------------\n";
 }
+
 
 void generateReceiptFile(const Receipt& receipt, const string& filename) {
     ofstream receiptFile(filename);
@@ -991,27 +1008,35 @@ void generateReceiptFile(const Receipt& receipt, const string& filename) {
     receiptFile << "/ /__| (_) | (_) |   <\\__ \\ | | | | | (_| |>  <  >  <  / /__| (_) | |_| | | | | (_| |  __/" << endl;
     receiptFile << "\\____/\\___/ \\___/|_|\\_\\___/_| |_| |_|\\__,_/_/\\_\\/_/\\_\\ \\____/\\___/ \\__,_|_| |_|\\__, |\\___|" << endl;
     receiptFile << "                                                                               |___/      " << endl;
-    receiptFile << "*********************************************\n";
-    receiptFile << "*               SERVICE RECEIPT             *\n";
-    receiptFile << "*********************************************\n\n";
-    receiptFile << left << setw(20) << "Booking Number:" << receipt.bookingNumber << endl;
-    receiptFile << left << setw(20) << "Customer Name:" << receipt.customer.name << endl;
-    receiptFile << left << setw(20) << "Expert:" << receipt.expert.name << endl;
-    receiptFile << left << setw(20) << "Session:" << (receipt.sessionType == TREATMENT ? "Treatment" : "Consultation") << endl;
-    receiptFile << left << setw(20) << "Service:" << receipt.serviceName << endl;
-    receiptFile << left << setw(20) << "Date:" << trim(receipt.date) + " July 2024" << endl;
-    receiptFile << left << setw(20) << "Time Slot:" << receipt.timeSlot << endl;
-    receiptFile << left << setw(20) << "Payment Method:" << paymentMethodToString(receipt.paymentMethod) << endl;
-    receiptFile << "+--------------------------------------------+\n\n";
-    receiptFile << left << setw(20) << "Amount Paid:" << "RM " << fixed << setprecision(2) << receipt.amountPaid << endl;
-    receiptFile << "\n---------------------------------------------\n";
-    receiptFile << "Thank you for choosing our services!\n";
-    receiptFile << "For inquiries, call us at +60-123-4567 or\n";
-    receiptFile << "email us at looksmaxxlounge@serviceprovider.com\n";
-    receiptFile << "---------------------------------------------\n";
+    receiptFile << "                                  LOOKSMAXXLOUNGE @LOOKSMAXXAREA" << endl;
+    receiptFile << "                                         Lot 23, 2nd Floor,\n";
+    receiptFile << "                                     Plaza Crystal, Jalan Ampang,\n";
+    receiptFile << "                                         50450 Kuala Lumpur,\n";
+    receiptFile << "                                 Wilayah Persekutuan Kuala Lumpur,\n";
+    receiptFile << "                                             Malaysia\n";
+    receiptFile << "                           *********************************************\n";
+    receiptFile << "                           *               SERVICE RECEIPT             *\n";
+    receiptFile << "                           *********************************************\n\n";
+    receiptFile << "                           Booking Number:" << receipt.bookingNumber << endl;
+    receiptFile << "                           Customer Name:" << receipt.customer.name << endl;
+    receiptFile << "                           Expert:" << receipt.expert.name << endl;
+    receiptFile << "                           Session:" << (receipt.sessionType == TREATMENT ? "Treatment" : "Consultation") << endl;
+    receiptFile << "                           Service:" << receipt.serviceName << endl;
+    receiptFile << "                           Date:" << trim(receipt.date) + " July 2024" << endl;
+    receiptFile << "                           Time Slot:" << receipt.timeSlot << endl;
+    receiptFile << "                           Payment Method:" << paymentMethodToString(receipt.paymentMethod) << endl;
+    receiptFile << "                           +-------------------------------------------+\n\n";
+    receiptFile << "                           Amount Paid:" << "RM " << fixed << setprecision(2) << receipt.amountPaid << endl;
+    receiptFile << "                           ---------------------------------------------\n\n";
+    receiptFile << "                           Thank you for choosing our services!\n";
+    receiptFile << "                           For inquiries, call us at +60-123-4567 or\n";
+    receiptFile << "                           email us at looksmaxxlounge@serviceprovider.com\n";
+    receiptFile << "                           ---------------------------------------------\n";
+
 
     receiptFile.close();
 }
+
 
 void printReceipt(const string& filename) {
 #ifdef _WIN32
@@ -1035,6 +1060,9 @@ void makeBooking(Expert& expert, Service service, SessionType sessionType, Custo
     double price = sessionType == TREATMENT ? service.price : 60.0;
 
     int* result = selectTimeSlot(expert, chosenWeek, sessionType);
+    if (result == nullptr) {
+        return;
+    }
     int day = result[0];
     int slot = result[1];
 
@@ -1481,6 +1509,8 @@ bool adminExpertLogin(UserType& userType, string& userName) {
     clearScreen();
     displayLogo();
 
+    cout << "[Input -999 to go back]" << endl;
+
     User alice = { "alice123", "Alice1234$", EXPERT };
     User bob = { "bob123", "Bob1234$", EXPERT };
     User carol = { "carol123", "Carol1234$", EXPERT };
@@ -1489,7 +1519,7 @@ bool adminExpertLogin(UserType& userType, string& userName) {
     User users[] = { alice, bob, carol, admin };
 
     string username, password;
-    cout << "Enter username: ";
+    cout << "\nEnter username: ";
     cin >> username;
     if (trim(username) == "-999") {
         cout << YELLOW << "Returning to previous menu." << RESET << endl;
