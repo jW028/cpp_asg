@@ -536,6 +536,7 @@ void updateExpertSchedule(Receipt& receipt, Expert& expert) {
     int week = -1, receiptDay = -1, slot = -1; // Initialize week, receiptDay, and slot to -1
     int date = stoi(trim(receipt.date));
     string timeSlot = trim(receipt.timeSlot);
+    timeSlot = timeSlot.substr(0, timeSlot.find(' '));
 
     // Determine the week and day based on the date
     if (date >= 1 && date <= 5) {
@@ -560,34 +561,34 @@ void updateExpertSchedule(Receipt& receipt, Expert& expert) {
     }
 
     // Determine the time slot
-    if (timeSlot == "9:00 - 10:00") {
+    if (timeSlot == "9:00") {
         slot = 0;
     }
-    else if (timeSlot == "10:00 - 11:00") {
+    else if (timeSlot == "10:00") {
         slot = 1;
     }
-    else if (timeSlot == "11:00 - 12:00") {
+    else if (timeSlot == "11:00") {
         slot = 2;
     }
-    else if (timeSlot == "12:00 - 13:00") {
+    else if (timeSlot == "12:00") {
         slot = 3;
     }
-    else if (timeSlot == "13:00 - 14:00") {
+    else if (timeSlot == "13:00") {
         slot = 4;
     }
-    else if (timeSlot == "14:00 - 15:00") {
+    else if (timeSlot == "14:00") {
         slot = 5;
     }
-    else if (timeSlot == "15:00 - 16:00") {
+    else if (timeSlot == "15:00") {
         slot = 6;
     }
-    else if (timeSlot == "16:00 - 17:00") {
+    else if (timeSlot == "16:00") {
         slot = 7;
     }
 
+    cout << week << " " << receiptDay << " " << slot << endl;
     // Ensure the slot is valid
     if (week != -1 && receiptDay != -1 && slot != -1) {
-
         // Load the schedule for the expert
         loadScheduleFromFile(expert, week);
 
@@ -659,6 +660,7 @@ void displayBookingInfo(Receipt receipt) {
     cout << "\n--------------------------------------------\n";
     cout << "Please arrive 10 minutes before your time slot.\n";
     cout << "--------------------------------------------\n";
+    cout << receipt.timeSlot << endl;
 }
 
 void displayCustomerBookings(Customer customer) {
