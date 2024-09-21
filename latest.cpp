@@ -1102,7 +1102,7 @@ void makeBooking(Expert& expert, Service service, SessionType sessionType, Custo
         string endTime = to_string(START_HOUR + slot + duration) + ":00";
         clearScreen(); 
         cout << "==========================================" << endl;
-        cout << "          Booking Confirmation I          " << endl;
+        cout << "          Booking Confirmation           " << endl;
         cout << "==========================================" << endl;
         cout << "Please confirm your booking details: \n";
         cout << "Service: " << service.name << endl;
@@ -1111,7 +1111,7 @@ void makeBooking(Expert& expert, Service service, SessionType sessionType, Custo
         cout << "Time Slot: " << startTime << " - " << endTime << endl;
         cout << "Price: RM " << fixed << setprecision(2) << price << endl;
         cout << "==========================================" << endl;
-        cout << "Confirm booking? (Y to proceed to payment/N to stop booking): ";
+        cout << "Confirm booking? (Y to proceed to payment/ any other key to stop booking): ";
         char confirm;
         cin >> confirm;
 
@@ -1239,10 +1239,8 @@ bool verifyOTP(const string &generatedOTP) {
     cout << "\nEnter the OTP sent to you: ";
     cin >> enteredOTP;
     if (enteredOTP == generatedOTP) {
-        cout << "OTP verified successfully!" << endl;
         return true;
     } else {
-        cout << RED << "\nInvalid OTP. Please try again." << RESET << endl;
         return false;
     }
 }
@@ -1648,7 +1646,14 @@ void generateSalesReport() {
     double totalRevenue = 0;
     int totalBookings = 0;
 
+    cout << "\n+-----------------------------------------------------------------------------------------------------------------------------+" << endl;
+    cout << "|                                                  Detailed Sales Report                                                      |" << endl;
+    cout << "+-----------------------------------------------------------------------------------------------------------------------------+" << endl;
+    cout << "| Booking #  | Date          | Time Slot         | Service Name        | Expert  | Customer Email          | Amount Paid (RM) |" << endl;
+    cout << "+------------+---------------+-------------------+---------------------+---------+-------------------------+------------------+" << endl;
+
     for (int i = 0; i < receiptCount; ++i) {
+        // Calculate total revenue and bookings
         totalRevenue += allReceipts[i].amountPaid;
         totalBookings++;
 
@@ -1673,10 +1678,21 @@ void generateSalesReport() {
         else if (trim(allReceipts[i].expert.name) == "Carol") {
             carolRevenue += allReceipts[i].amountPaid;
         }
+
+        // Display each receipt's details, including customer email
+        cout << "| " << setw(10) << left << allReceipts[i].bookingNumber
+             << " | " << setw(13) << left << allReceipts[i].date + " July 2024"
+             << " | " << setw(17) << left << allReceipts[i].timeSlot
+             << " | " << setw(19) << left << allReceipts[i].serviceName
+             << " | " << setw(7) << left << allReceipts[i].expert.name 
+             << " | " << setw(23) << left << allReceipts[i].customer.email 
+             << " | RM " << setw(13) << right << fixed << setprecision(2) << allReceipts[i].amountPaid << " |"  << endl;
     }
-    // Display the sales report
+    cout << "+------------+---------------+-------------------+---------------------+---------+-------------------------+------------------+" << endl;
+
+    // Display overall sales summary
     cout << "\n+-----------------------------------+" << endl;
-    cout << "|          Sales Report             |" << endl;
+    cout << "|          Sales Summary            |" << endl;
     cout << "+-----------------------------------+" << endl;
     cout << "| Total Bookings: " << setw(17) << totalBookings << " |" << endl;
     cout << "| Total Revenue : RM " << setw(14) << fixed << setprecision(2) << totalRevenue << " |" << endl;
@@ -1701,8 +1717,8 @@ void generateSalesReport() {
     cout << "| " << setw(23) << left << "Bob" << " | RM " << setw(13) << right << fixed << setprecision(2) << bobRevenue << " |" << endl;
     cout << "| " << setw(23) << left << "Carol" << " | RM " << setw(13) << right << fixed << setprecision(2) << carolRevenue << " |" << endl;
     cout << "+-------------------------+------------------+" << endl;
-
 }
+
 
 void displayCustomerDetails(Customer customer) {
     cout << "\n+-----------------------------------+" << endl;
