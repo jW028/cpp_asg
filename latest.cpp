@@ -1812,22 +1812,40 @@ void sortCustomersByExpertBookings(Customer customers[], int customerCount, cons
 void sortCustomersByName(Customer customers[], int customerCount, int bookingCounts[]) {
     for (int i = 0; i < customerCount - 1; ++i) {
         int minIndex = i;
+        
         for (int j = i + 1; j < customerCount; ++j) {
-            if (customers[j].name < customers[minIndex].name) {
+            // Convert both customer names to lowercase for comparison
+            string currentName = customers[j].name;
+            string minName = customers[minIndex].name;
+
+            // Convert both strings to lowercase
+            for (int k = 0; k < currentName.length(); ++k) {
+                currentName[k] = tolower(currentName[k]);
+            }
+            for (int k = 0; k < minName.length(); ++k) {
+                minName[k] = tolower(minName[k]);
+            }
+
+            // Compare the lowercase names
+            if (currentName < minName) {
                 minIndex = j;
             }
         }
-        // Swap the found minimum element with the first element
+
+        // Swap the found minimum element with the current element
         if (minIndex != i) {
             Customer tempCustomer = customers[i];
             customers[i] = customers[minIndex];
             customers[minIndex] = tempCustomer;
+
+            // Swap corresponding booking counts
             int tempCount = bookingCounts[i];
             bookingCounts[i] = bookingCounts[minIndex];
             bookingCounts[minIndex] = tempCount;
         }
     }
 }
+
 
 void sortCustomersByTotalBookings(Customer customers[], int customerCount, int bookingCounts[]) {
     for (int i = 0; i < customerCount - 1; i++) {
@@ -1893,9 +1911,6 @@ void viewCustomers(string expertName = "") {
     choice = getValidatedInput(1, 3);
     if (choice == -999) {
         return;
-    }
-    if (expertName.empty()) {
-        cout << "Admin"<< endl;
     }
 
     switch (choice) {
