@@ -1630,6 +1630,11 @@ void displayCustomers(const Customer customers[], int customerCount, int booking
     displayCustomerDetails(customers[choice - 1]);
 }
 
+string createHistogramBar(double value, double maxRevenue) {
+    int barLength = static_cast<int>((value / maxRevenue) * 50);
+    return string(barLength, '#');
+}
+
 void generateSalesReport() {
     Receipt allReceipts[200];
     int receiptCount = loadBookings(allReceipts);
@@ -1637,6 +1642,8 @@ void generateSalesReport() {
     string experts[] = { "Alice", "Bob", "Carol" };
     double facialRevenue = 0, botoxRevenue = 0, manicureRevenue = 0;
     double aliceRevenue = 0, bobRevenue = 0, carolRevenue = 0;
+    double serviceRevenue[3] = {0};
+    double expertRevenue[3] = {0};
 
     if (receiptCount == 0) {
         cout << RED << "No bookings found. Unable to generate sales report." << RESET << endl;
@@ -1690,6 +1697,21 @@ void generateSalesReport() {
     }
     cout << "+------------+---------------+-------------------+---------------------+---------+-------------------------+------------------+" << endl;
 
+    double allSales[3] = { facialRevenue, botoxRevenue, manicureRevenue };
+    const char *serviceNames[3] = { "Facial", "Botox", "Manicure" };
+    char c = 178;
+    char d = 255;
+    char b = 179, y = 192, z = 196;
+
+    double MAX = 0;
+    for (int i=0; i<3; i++) {
+        if (allSales[i] > MAX) {
+            MAX = allSales[i];
+        }
+    }
+
+    int roundedMax = ((int)(MAX/10) + 1) * 10;
+
     // Display overall sales summary
     cout << "\n+-----------------------------------+" << endl;
     cout << "|          Sales Summary            |" << endl;
@@ -1717,7 +1739,31 @@ void generateSalesReport() {
     cout << "| " << setw(23) << left << "Bob" << " | RM " << setw(13) << right << fixed << setprecision(2) << bobRevenue << " |" << endl;
     cout << "| " << setw(23) << left << "Carol" << " | RM " << setw(13) << right << fixed << setprecision(2) << carolRevenue << " |" << endl;
     cout << "+-------------------------+------------------+" << endl;
+
+
+    printf("\n\t\t\tSALES REVENUE HISTOGRAM\n\n");
+
+    for (int yaxis = roundedMax; yaxis >= 0; yaxis -=40) {
+        printf("%4d │", yaxis);
+        for (int i=0; i<3; i++) {
+            if (allSales[i] >= yaxis) {
+                printf("   ▓▓▓▓ ");
+            } else {
+                printf("      ");
+            }
+        }
+        printf("\n");
+    }
+
+    printf("     └───────────────────────────────────\n");
+    printf("       ");
+    for (int i = 0; i < 3; i++) {
+        printf("  %s", serviceNames[i]);
+    }
+    printf("\n\n");
 }
+
+
 
 
 void displayCustomerDetails(Customer customer) {
