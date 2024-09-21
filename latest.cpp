@@ -1835,11 +1835,11 @@ void sortCustomersByTotalBookings(Customer customers[], int customerCount, int b
             if (bookingCounts[j] < bookingCounts[j + 1]) {
                 // Swap customers[i] and customers[j]
                 Customer tempCustomer = customers[i];
-                customers[i] = customers[j];
-                customers[j] = tempCustomer;
+                customers[i] = customers[j + 1];
+                customers[j + 1] = tempCustomer;
                 int tempCount = bookingCounts[i];
-                bookingCounts[i] = bookingCounts[j];
-                bookingCounts[j] = tempCount;
+                bookingCounts[j] = bookingCounts[j + 1];
+                bookingCounts[j + 1] = tempCount;
             }
         }
     }
@@ -1893,6 +1893,9 @@ void viewCustomers(string expertName = "") {
     choice = getValidatedInput(1, 3);
     if (choice == -999) {
         return;
+    }
+    if (expertName.empty()) {
+        cout << "Admin"<< endl;
     }
 
     switch (choice) {
