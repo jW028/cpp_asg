@@ -1549,7 +1549,7 @@ void checkSchedule() {
     cout << "+-----------+--------------------------------------------+" << endl;
 
     // Get the user's choice for expert
-    cout << "Check schedule for: ";
+    cout << "Check schedule for: (-999 to go back)";
     choice = getValidatedInput(1, 3);
     if (choice == -999) {
         return;
@@ -1779,7 +1779,7 @@ void displayCustomers(const Customer customers[], int customerCount, int booking
             << " | " << setw(15) << bookingCounts[i] << " |" << endl;
     }
     cout << "+----+------------------------------+---------------------------+-----------------+" << endl;
-    cout << "\nSelect a customer to view their information: " << endl;
+    cout << "\nSelect a customer to view their information (-999 to go back): " << endl;
     choice = getValidatedInput(1, customerCount); // Get valid input
     if (choice == -999) {
         return; // Handle return to previous menu 
@@ -2373,7 +2373,7 @@ void displayExpertDetails(Expert& expert) {
     }
     // Asks the customer if they want to view the expert's schedule
     char viewSchedule;
-    cout << "Do you want to view this expert's schedule? (Y or N): " << endl;
+    cout << "Do you want to view this expert's schedule? (Enter Y or any other key ): " << endl;
     cin >> viewSchedule;
 
     if (tolower(viewSchedule) == 'y') {
@@ -2402,7 +2402,7 @@ void viewExperts() {
     cout << "| [2]       | Bob                                        |" << endl;
     cout << "| [3]       | Carol                                      |" << endl;
     cout << "+-----------+--------------------------------------------+" << endl;
-    cout << "Select an expert to view their details: ";
+    cout << "Select an expert to view their details (-999 to go back): ";
     choice = getValidatedInput(1, 3); // Ensures valid input between 1-3
 
     if (choice == -999) {
