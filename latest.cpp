@@ -6,18 +6,18 @@
 #include <fstream>
 #include <regex>
 #ifdef _WIN32
-#include <windows.h>
-#include <conio.h>
-#include <direct.h>
-#include <io.h>
-#define ACCESS _access
-#define MKDIR(dir) _mkdir(dir)
+    #include <windows.h>
+    #include <conio.h>
+    #include <direct.h>
+    #include <io.h>
+    #define ACCESS _access
+    #define MKDIR(dir) _mkdir(dir)
 #else
-#include <termios.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#define ACCESS access
-#define MKDIR(dir) mkdir(dir, 0777)
+    #include <termios.h>
+    #include <sys/stat.h>
+    #include <unistd.h>
+    #define ACCESS access
+    #define MKDIR(dir) mkdir(dir, 0777)
 #endif
 #define START_HOUR 9
 #define END_HOUR 17 // Operating hours from 9 AM to 5 PM
@@ -1851,7 +1851,7 @@ void generateSalesReport() {
             << " | " << setw(19) << left << allReceipts[i].serviceName
             << " | " << setw(7) << left << allReceipts[i].expert.name
             << " | " << setw(23) << left << allReceipts[i].customer.email
-            << " | RM " << setw(13) << right << fixed << setprecision(2) << allReceipts[i].amountPaid << " |" << endl;
+            << " | RM " << setw(12) << right << fixed << setprecision(2) << allReceipts[i].amountPaid << "  |" << endl;
     }
     // Display table footer
     cout << "+------------+---------------+-------------------+---------------------+---------+-------------------------+------------------+" << endl;
