@@ -1089,6 +1089,7 @@ void generateReceipt(const Receipt& receipt) {
 // Function to generate a receipt file and save it to the specified filename
 void generateReceiptFile(const Receipt& receipt, const string& filename) {
     // Open the receipt file for writing
+    createDirectoryIfNotExists("receipts"); // Ensure the schedules directory exists
     ofstream receiptFile(filename);
 
     // Check if the file opened successfully
@@ -1226,7 +1227,7 @@ void makeBooking(Expert& expert, Service service, SessionType sessionType, Custo
                 cout << "==========================================" << endl;
 
                 // Prepare to save the receipt to a file
-                string receiptFileName = "receipt_" + bookingNumber + ".txt";
+                string receiptFileName = "receipts/receipt_" + bookingNumber + ".txt";
                 generateReceiptFile(receipt, receiptFileName); // Save the receipt to a file
                 printReceipt(receiptFileName); // Print the receipt
 
@@ -2252,7 +2253,7 @@ void serviceDesc(Service service, Customer& customer) {
     cout << "===============================\n";
 
     // Asks the user if they want to book the service
-    cout << "Enter to book or any other key to return to main menu: ";
+    cout << "Enter Y to book or any other key to return to main menu: ";
     char choice;
     cin >> choice;
     if (choice == 'Y' || choice == 'y') { // If 'Y' or 'y' is entered, proceed with booking
