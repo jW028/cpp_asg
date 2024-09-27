@@ -398,7 +398,11 @@ void displayCalendar(Expert& expert) {
                 }
             }
         }
-        cout << "Week " << (week + 1) << ":" << "(" << GREEN << availableSlots << RESET << " slots available)" << endl;
+        if (availableSlots > 0) {
+            cout << "Week " << (week + 1) << ":" << "(" << GREEN << availableSlots  << " slots available)" << RESET << endl;
+        } else {
+            cout << "Week " << (week + 1) << ":" << "(" << RED << 0  << " slots available)" << RESET << endl;
+        }
 
         // Display days and dates for the week
         cout << string(DAYWIDTH * 6 + 2, '-') << endl;
@@ -1225,6 +1229,16 @@ void makeBooking(Expert& expert, Service service, SessionType sessionType, Custo
                     << " with " << expert.name << " for " << service.name << " ("
                     << (sessionType == TREATMENT ? "Treatment" : "Consultation") << ")." << endl;
                 cout << "==========================================" << endl;
+
+                if (expert.hoursWorkedPerDay[day] >= MAX_WORK_HOURS) {
+                    // If the expert reaches the max hours, mark remaining slots as unavailable
+                    for (int slot = 0; slot < MAX_SLOTS_PER_DAY; ++slot) {
+                        if (!expert.schedule[day][slot].isBooked) {
+                            expert.schedule[day][slot].type = UNAVAILABLE;
+                        }
+                    }
+                    cout << "Expert has reached the maximum working hours for the day. Remaining slots are now unavailable.\n";
+                }
 
                 // Prepare to save the receipt to a file
                 string receiptFileName = "receipts/receipt_" + bookingNumber + ".txt";
